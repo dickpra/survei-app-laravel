@@ -8,6 +8,7 @@ use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use App\Filament\User\Resources\SurveyResource; // <-- TAMBAHKAN INI
 
 class RecentSurveys extends BaseWidget
 {
@@ -33,10 +34,10 @@ class RecentSurveys extends BaseWidget
                     ->since(),
             ])
             ->actions([
-                // Tambahkan tombol untuk langsung ke halaman hasil
+                // PERBAIKAN ADA DI BARIS '->url' DI BAWAH INI
                 Tables\Actions\Action::make('Lihat Hasil')
                     ->icon('heroicon-o-chart-bar')
-                    ->url(fn (Survey $record): string => url("/user/surveys/{$record->id}/results")),
+                    ->url(fn (Survey $record): string => SurveyResource::getUrl('view-survey-results', ['record' => $record])),
             ]);
     }
 }

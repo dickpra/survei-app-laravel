@@ -84,49 +84,56 @@ class ViewSurveyResults extends Page
     }
 
     protected function processResults(): void
-    {
-        // Ambil semua data respons untuk survei ini sekali saja
-        $allResponses = $this->record->responses()->pluck('answers');
+{
+    $allResponses = $this->record->responses()->pluck('answers');
+    $processedResults = [];
 
-        // Siapkan array kosong untuk hasil akhir
-        $processedResults = [];
+    foreach ($this->record->questionnaireTemplate->content_blocks as $block) {
+        if ($block['type'] !== 'section_block') continue;
 
-        // Loop melalui setiap blok dan pertanyaan dari TEMPLATE survei
-        foreach ($this->record->questionnaireTemplate->content_blocks as $block) {
-            if ($block['type'] !== 'section_block') continue;
+        foreach ($block['data']['questions'] as $question) {
+            $questionContent = $question['content'];
+            $questionType = $question['type'];
+            $tempAnswers = [];
 
-            foreach ($block['data']['questions'] as $question) {
-                $questionContent = $question['content'];
-                $questionType = $question['type'];
-                $tempAnswers = [];
+            foreach ($allResponses as $responseAnswers) {
+                if (isset($responseAnswers[$questionContent])) {
+                    $tempAnswers[] = $responseAnswers[$questionContent];
+                }
+            }
+            
+            if ($questionType === 'isian pendek') {
+                $processedResults[$questionContent] = [
+                    'type' => 'isian pendek',
+                    'content' => $questionContent,
+                    'answers' => $tempAnswers,
+                ];
+            } elseif ($questionType === 'skala likert') {
+                $likertResult = ['1' => 0, '2' => 0, '3' => 0, '4' => 0, '5' => 0];
+                $answerCounts = array_count_values($tempAnswers);
 
-                // Sekarang, loop melalui setiap data respons untuk mengumpulkan jawaban
-                // dari pertanyaan saat ini.
-                foreach ($allResponses as $responseAnswers) {
-                    // Cek apakah jawaban untuk pertanyaan ini ada di dalam respons
-                    if (isset($responseAnswers[$questionContent])) {
-                        $tempAnswers[] = $responseAnswers[$questionContent];
+                foreach ($answerCounts as $value => $count) {
+                    // PERBAIKAN: Ubah $value menjadi string saat pengecekan
+                    if (isset($likertResult[(string)$value])) {
+                        $likertResult[(string)$value] = $count;
                     }
                 }
 
-                // Setelah semua jawaban terkumpul, proses hasilnya
-                if ($questionType === 'isian pendek') {
-                    $processedResults[$questionContent] = [
-                        'type' => 'isian pendek',
-                        'content' => $questionContent,
-                        'answers' => $tempAnswers,
-                    ];
-                } else { // Untuk 'pilihan ganda', 'skala likert', 'dropdown'
-                    $processedResults[$questionContent] = [
-                        'type' => 'agregat',
-                        'content' => $questionContent,
-                        // array_count_values() adalah fungsi PHP untuk menghitung frekuensi setiap jawaban
-                        'answers' => array_count_values($tempAnswers),
-                    ];
-                }
+                $processedResults[$questionContent] = [
+                    'type' => 'agregat',
+                    'content' => $questionContent,
+                    'answers' => $likertResult,
+                ];
+            } else { // Untuk 'pilihan ganda', 'dropdown', dll.
+                $processedResults[$questionContent] = [
+                    'type' => 'agregat',
+                    'content' => $questionContent,
+                    'answers' => array_count_values($tempAnswers),
+                ];
             }
         }
-
-        $this->results = $processedResults;
     }
+    
+    $this->results = $processedResults;
+}
 }
