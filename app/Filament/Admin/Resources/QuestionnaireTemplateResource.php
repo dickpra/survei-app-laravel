@@ -47,14 +47,19 @@ class QuestionnaireTemplateResource extends Resource
                                         Forms\Components\Select::make('type')
                                             ->label('Tipe Pertanyaan')
                                             ->options([
-                                                'isian pendek' => 'Isian Pendek',
+                                                'isian pendek' => 'Isian',
                                                 'pilihan ganda' => 'Pilihan Ganda (Radio)',
                                                 'dropdown' => 'Dropdown',
                                                 'skala likert' => 'Skala Likert (1-5)',
                                             ])->required()->live(),
+                                        // Forms\Components\TagsInput::make('options')
+                                        //     ->label('Pilihan Jawaban')
+                                        //     ->visible(fn ($get) => in_array($get('type'), ['pilihan ganda', 'dropdown'])),
                                         Forms\Components\TagsInput::make('options')
-                                            ->label('Pilihan Jawaban')
-                                            ->visible(fn ($get) => in_array($get('type'), ['pilihan ganda', 'dropdown'])),
+                                            ->label('Pilihan Jawaban / Label Skala Likert')
+                                            // Ubah kondisi visible menjadi seperti ini
+                                            ->visible(fn ($get) => in_array($get('type'), ['pilihan ganda', 'dropdown', 'skala likert']))
+                                            ->helperText('Untuk Skala Likert, isi label urut dari nilai terendah ke tertinggi. Contoh: Sangat Buruk, Buruk, Cukup, Baik, Sangat Baik'),
                                     ])->addActionLabel('Tambah Pertanyaan'),
                             ])
                     ])->columnSpanFull()->addActionLabel('Tambah Blok Bagian Baru'),
@@ -64,13 +69,28 @@ class QuestionnaireTemplateResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('title')
                     ->label('Judul Template')
                     ->searchable(),
+
+                // --- PERBAIKAN ADA DI SINI ---
                 Tables\Columns\TextColumn::make('questions_count')
-                    ->counts('questions')
-                    ->label('Jumlah Pertanyaan'),
+                    ->label('Jumlah Pertanyaan')
+                    ->getStateUsing(function (QuestionnaireTemplate $record): int {
+                        // Cek jika content_blocks kosong atau bukan array
+                        if (empty($record->content_blocks) || !is_array($record->content_blocks)) {
+                            return 0;
+                        }
+                        
+                        // Gunakan collection untuk menghitung total pertanyaan dari semua blok
+                        return collect($record->content_blocks)
+                            ->pluck('data.questions') // Ambil semua array 'questions'
+                            ->flatten(1) // Gabungkan menjadi satu array besar
+                            ->count();   // Hitung totalnya
+                    }),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime('d M Y')
                     ->sortable(),

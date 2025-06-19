@@ -16,9 +16,12 @@ use Illuminate\Support\Str;
 // use Filament\Resources\Pages\Action;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
+use Illuminate\Support\Facades\Auth;
+
 
 class SurveyResource extends Resource
 {
+    
     protected static ?string $model = Survey::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
@@ -28,11 +31,10 @@ class SurveyResource extends Resource
      *
      * @return Builder
      */
-    // public static function getEloquentQuery(): Builder
-    // {
-    //     return parent::getEloquentQuery()->where('user_id', auth()->id());
-    // }
-
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->where('user_id', auth()->id());
+    }
     /**
      * Mendefinisikan form untuk membuat survei baru.
      *
@@ -71,6 +73,13 @@ class SurveyResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+        ->query(
+                // PASTIKAN ADA ->where('user_id', Auth::id()) DI SINI
+                Survey::query()
+                    ->where('user_id', Auth::id())
+                    ->latest()
+                    ->limit(5)
+            )
             ->columns([
                 Tables\Columns\TextColumn::make('title')
                     ->label('Judul Survei')

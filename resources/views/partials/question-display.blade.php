@@ -6,12 +6,13 @@
 
     @switch($question->type)
         @case('isian pendek')
-            <input 
-                type="text" 
-                name="answers[{{ $question->content }}]" 
-                id="question-{{ $question->id }}" 
+            <textarea
+                name="answers[{{ $question->content }}]"
+                id="question-{{ $question->id }}"
+                rows="3"
+                class="w-full p-3 border border-gray-300 rounded resize-y focus:border-indigo-600 focus:shadow-outline"
                 required
-            >
+            >{{ old('answers.' . $question->content) }}</textarea>
             @break
 
         @case('pilihan ganda')
@@ -31,7 +32,7 @@
             </div>
             @break
 
-        @case('skala likert')
+        {{-- @case('skala likert')
             <div class="likert-group">
                 @for ($i = 1; $i <= 5; $i++)
                     <div class="likert-item">
@@ -45,6 +46,30 @@
                         >
                     </div>
                 @endfor
+            </div>
+            @break --}}
+
+            @case('skala likert')
+            <div class="likert-group">
+                {{-- Cek apakah admin menyediakan opsi label custom --}}
+                @if(!empty($question->options) && count($question->options) > 0)
+                    {{-- Jika ya, loop melalui label custom tersebut --}}
+                    @foreach($question->options as $index => $label)
+                        <div class="likert-item">
+                            <label for="likert-{{ $question->id }}-{{ $index }}">{{ $label }}</label>
+                            {{-- Nilai yang disimpan tetap angka (1, 2, 3, ...) --}}
+                            <input type="radio" name="answers[{{ $question->content }}]" value="{{ $index + 1 }}" id="likert-{{ $question->id }}-{{ $index }}" required>
+                        </div>
+                    @endforeach
+                @else
+                    {{-- Jika tidak, kembali ke tampilan angka 1-5 --}}
+                    @for ($i = 1; $i <= 5; $i++)
+                        <div class="likert-item">
+                            <label for="likert-{{ $question->id }}-{{ $i }}">{{ $i }}</label>
+                            <input type="radio" name="answers[{{ $question->content }}]" value="{{ $i }}" id="likert-{{ $question->id }}-{{ $i }}" required>
+                        </div>
+                    @endfor
+                @endif
             </div>
             @break
             

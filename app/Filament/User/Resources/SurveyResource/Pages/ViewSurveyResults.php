@@ -31,6 +31,101 @@ class ViewSurveyResults extends Page
 
         // dd($this->results);
     }
+
+
+    // protected function getHeaderActions(): array
+    // {
+    //     return [
+    //         Action::make('export')
+    //             ->label('Ekspor ke CSV')
+    //             ->icon('heroicon-o-document-arrow-down')
+    //             ->color('success')
+    //             ->action(function () {
+    //                 $filename = 'hasil-' . $this->record->unique_code . '.csv';
+
+    //                 $questions = collect($this->record->questionnaireTemplate->content_blocks)
+    //                     ->pluck('data.questions')
+    //                     ->flatten(1);
+                    
+    //                 $headers = ['ID Responden', 'Waktu Mengisi'];
+    //                 foreach ($questions as $question) {
+    //                     if (is_array($question) && isset($question['content'])) {
+    //                         $headers[] = $question['content'];
+    //                     }
+    //                 }
+
+    //                 $responses = $this->record->responses;
+    //                 $rows = [];
+
+    //                 // --- PERSIAPAN UNTUK RINGKASAN ---
+    //                 // Inisialisasi array untuk menyimpan data statistik (jumlah dan total nilai)
+    //                 $summaryData = [];
+    //                 foreach ($questions as $question) {
+    //                     if ($question['type'] === 'skala likert') {
+    //                         $summaryData[$question['content']] = ['sum' => 0, 'count' => 0];
+    //                     }
+    //                 }
+
+    //                 foreach ($responses as $response) {
+    //                     $rowData = [
+    //                         $response->id,
+    //                         $response->created_at->format('Y-m-d H:i:s'),
+    //                     ];
+                        
+    //                     foreach ($questions as $question) {
+    //                         if (is_array($question) && isset($question['content'])) {
+    //                             $questionContent = $question['content'];
+    //                             $answer = $response->answers[$questionContent] ?? null;
+    //                             $rowData[] = $answer;
+
+    //                             // --- UPDATE DATA RINGKASAN ---
+    //                             // Jika pertanyaan adalah skala likert dan jawabannya numerik, tambahkan ke total
+    //                             if ($question['type'] === 'skala likert' && is_numeric($answer)) {
+    //                                 $summaryData[$questionContent]['sum'] += (float)$answer;
+    //                                 $summaryData[$questionContent]['count']++;
+    //                             }
+    //                         }
+    //                     }
+    //                     $rows[] = $rowData;
+    //                 }
+
+    //                 // --- MEMBUAT BARIS RINGKASAN FINAL ---
+    //                 $summaryRow = ['Rata-Rata (Average)', '']; // Kolom pertama untuk label
+    //                 foreach ($questions as $question) {
+    //                     $questionContent = $question['content'];
+    //                     if ($question['type'] === 'skala likert') {
+    //                         $stats = $summaryData[$questionContent];
+    //                         // Hitung rata-rata, hindari pembagian dengan nol
+    //                         $average = ($stats['count'] > 0) ? $stats['sum'] / $stats['count'] : 0;
+    //                         // Format angka menjadi 2 desimal
+    //                         $summaryRow[] = number_format($average, 2);
+    //                     } else {
+    //                         $summaryRow[] = ''; // Beri sel kosong untuk kolom non-numerik
+    //                     }
+    //                 }
+                    
+    //                 $callback = function () use ($headers, $rows, $summaryRow) {
+    //                     $file = fopen('php://output', 'w');
+    //                     fputcsv($file, $headers); // Tulis header
+
+    //                     foreach ($rows as $row) { // Tulis semua baris data
+    //                         fputcsv($file, $row);
+    //                     }
+
+    //                     // Tulis baris kosong sebagai pemisah
+    //                     fputcsv($file, []); 
+    //                     // Tulis baris ringkasan
+    //                     fputcsv($file, $summaryRow); 
+
+    //                     fclose($file);
+    //                 };
+
+    //                 return response()->streamDownload($callback, $filename);
+    //             }),
+    //     ];
+    // }
+
+
     protected function getHeaderActions(): array
     {
         return [
@@ -40,29 +135,45 @@ class ViewSurveyResults extends Page
                 ->color('success')
                 ->action(function () {
                     $filename = 'hasil-' . $this->record->unique_code . '.csv';
-                    $responses = $this->record->responses()->with('answers')->get();
 
-                    $questions = $this->record->questionnaireTemplate->questions;
-                    $headers = ['ID Responden'];
+                    // --- PERUBAHAN 1: Mengambil Header dari JSON ---
+                    // Ambil semua pertanyaan dari semua blok dan jadikan satu daftar
+                    $questions = collect($this->record->questionnaireTemplate->content_blocks)
+                        ->pluck('data.questions')
+                        ->flatten(1);
+                    
+                    // Buat header dari konten pertanyaan
+                    $headers = ['ID Responden', 'Waktu Mengisi'];
                     foreach ($questions as $question) {
-                        $headers[] = $question->content;
-                    }
-
-                    $rows = [];
-                    foreach ($responses as $response) {
-                        $row = [$response->id];
-                        foreach ($questions as $question) {
-                            $answer = $response->answers->where('question_id', $question->id)->first();
-                            $row[] = $answer ? $answer->value : '';
+                        // Pastikan question adalah array dan memiliki 'content'
+                        if (is_array($question) && isset($question['content'])) {
+                            $headers[] = $question['content'];
                         }
-                        $rows[] = $row;
                     }
 
-                    $callback = function () use ($headers, $rows) {
+                    // --- PERUBAHAN 2: Mengambil Data dari JSON ---
+                    $responses = $this->record->responses; // Ambil semua response
+                    
+                    $callback = function () use ($headers, $responses, $questions) {
                         $file = fopen('php://output', 'w');
                         fputcsv($file, $headers);
-                        foreach ($rows as $row) {
-                            fputcsv($file, $row);
+
+                        // Loop melalui setiap baris data response
+                        foreach ($responses as $response) {
+                            $rowData = [
+                                $response->id,
+                                $response->created_at->format('Y-m-d H:i:s'),
+                            ];
+                            
+                            // Loop melalui setiap pertanyaan untuk memastikan urutan kolom benar
+                            foreach ($questions as $question) {
+                                if (is_array($question) && isset($question['content'])) {
+                                    $questionContent = $question['content'];
+                                    // Ambil jawaban dari kolom JSON 'answers' di response
+                                    $rowData[] = $response->answers[$questionContent] ?? '';
+                                }
+                            }
+                            fputcsv($file, $rowData);
                         }
                         fclose($file);
                     };

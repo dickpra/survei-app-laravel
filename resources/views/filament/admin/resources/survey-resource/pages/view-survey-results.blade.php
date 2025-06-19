@@ -2,8 +2,9 @@
     <style>
         .scrollable-answers { max-height: 300px; overflow-y: auto; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; }
         .chart-container { display: flex; flex-direction: column; md:flex-direction: row; align-items: center; gap: 1.5rem; }
-        .chart-canvas-container { flex-shrink: 0; width: 100%; md:width: 50%; height: 20rem; }
+        .chart-canvas-container { flex-shrink: 0; width: 100%; min-height: 320px; md:width: 50%; height: 20rem; }
         .custom-legend-container { width: 100%; md:width: 50%; }
+        .legend-list { list-style: none; padding: 0; }
         .legend-item { display: flex; align-items: center; margin-bottom: 0.75rem; font-size: 0.875rem; }
         .legend-color-box { width: 16px; height: 16px; margin-right: 12px; border-radius: 4px; flex-shrink: 0; }
         .legend-label { flex-grow: 1; color: #374151; }
@@ -20,27 +21,26 @@
             </div>
         </x-filament::card>
 
-        @foreach($results as $questionId => $result)
+        @foreach($results as $questionContent => $result)
             <x-filament::card class="space-y-4">
                 
                 @if($result['type'] === 'agregat' && !empty($result['answers']))
-                    {{-- 1. KEMBALIKAN TOMBOL PILIHAN GRAFIK --}}
                     <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
                         <h3 class="font-bold text-lg">{{ $loop->iteration }}. {{ $result['content'] }}</h3>
                         <div class="flex space-x-1 rounded-lg bg-gray-100 p-1">
-                            <button onclick="changeChartType('chart-{{ $questionId }}', 'doughnut')" class="px-3 py-1 text-sm font-medium text-gray-700 rounded-md hover:bg-white focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500">Doughnut</button>
-                            <button onclick="changeChartType('chart-{{ $questionId }}', 'pie')" class="px-3 py-1 text-sm font-medium text-gray-700 rounded-md hover:bg-white focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500">Pie</button>
-                            <button onclick="changeChartType('chart-{{ $questionId }}', 'bar')" class="px-3 py-1 text-sm font-medium text-gray-700 rounded-md hover:bg-white focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500">Bar</button>
-                            <button onclick="changeChartType('chart-{{ $questionId }}', 'line')" class="px-3 py-1 text-sm font-medium text-gray-700 rounded-md hover:bg-white focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500">Line</button>
+                            <button onclick="changeChartType('chart-{{ $loop->index }}', 'doughnut')" class="px-3 py-1 text-sm font-medium text-gray-700 rounded-md hover:bg-white focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500">Doughnut</button>
+                            <button onclick="changeChartType('chart-{{ $loop->index }}', 'pie')" class="px-3 py-1 text-sm font-medium text-gray-700 rounded-md hover:bg-white focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500">Pie</button>
+                            <button onclick="changeChartType('chart-{{ $loop->index }}', 'bar')" class="px-3 py-1 text-sm font-medium text-gray-700 rounded-md hover:bg-white focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500">Bar</button>
+                            <button onclick="changeChartType('chart-{{ $loop->index }}', 'line')" class="px-3 py-1 text-sm font-medium text-gray-700 rounded-md hover:bg-white focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500">Line</button>
                         </div>
                     </div>
                     
-                    {{-- Layout 2 kolom untuk grafik dan legenda --}}
                     <div class="chart-container">
                         <div class="chart-canvas-container" wire:ignore>
-                            <canvas id="chart-{{ $questionId }}"></canvas>
+                            {{-- PERBAIKAN 1: ID Canvas menggunakan $loop->index --}}
+                            <canvas id="chart-{{ $loop->index }}"></canvas>
                         </div>
-                        <div class="custom-legend-container" id="legend-container-{{ $questionId }}">
+                        <div class="custom-legend-container" id="legend-container-{{ $loop->index }}">
                             {{-- Legenda akan di-render oleh JavaScript di sini --}}
                         </div>
                     </div>
@@ -63,20 +63,23 @@
     </div>
 
     @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        {{-- TAMBAHKAN INI: Muat library plugin datalabels --}}
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+
         <script>
-            
-            // 2. KEMBALIKAN LOGIKA JAVASCRIPT YANG LENGKAP
             document.addEventListener('DOMContentLoaded', () => {
+                // Daftarkan plugin datalabels secara global agar bisa digunakan oleh semua chart
+                Chart.register(ChartDataLabels);
+
                 window.myCharts = {};
                 const resultsData = @json($results);
 
-                for (const questionId in resultsData) {
-                    const result = resultsData[questionId];
+                Object.values(resultsData).forEach((result, index) => {
                     if (result.type === 'agregat' && Object.keys(result.answers).length > 0) {
-                        createChart(`chart-${questionId}`, 'doughnut', result.answers); // Buat chart awal sebagai 'bar'
+                        createChart(`chart-${index}`, 'pie', result.answers); // Buat chart awal sebagai 'bar'
                     }
-                }
+                });
             });
 
             function createChart(canvasId, type, answersData) {
@@ -94,8 +97,40 @@
                             }]
                         },
                         options: {
-                            responsive: true, maintainAspectRatio: false,
-                            plugins: { legend: { display: false } },
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                
+                                // --- PERUBAHAN UTAMA ADA DI SINI ---
+                                datalabels: {
+                                    formatter: (value, context) => {
+                                        // Ambil label dari data chart, contoh: "Sangat Cepat"
+                                        const label = context.chart.data.labels[context.dataIndex];
+                                        
+                                        // Hitung total untuk kalkulasi persentase
+                                        const total = context.chart.data.datasets[0].data.reduce((sum, data) => sum + data, 0);
+                                        const percentage = (value / total * 100);
+
+                                        // Jangan tampilkan label jika persentasenya terlalu kecil (di bawah 5%)
+                                        if (percentage < 5) {
+                                            return null; // atau return '';
+                                        }
+
+                                        // Gabungkan semuanya menjadi format yang Anda inginkan
+                                        // \n digunakan untuk membuat baris baru agar lebih rapi
+                                        return `${label}\n${value} (${percentage.toFixed(1)}%)`;
+                                    },
+                                    color: '#fff', // Warna teks label
+                                    font: {
+                                        weight: 'bold',
+                                        size: 11,
+                                    },
+                                    align: 'center',
+                                    anchor: 'center',
+                                    textAlign: 'center'
+                                }
+                            },
                             scales: {
                                 y: { display: (type === 'bar' || type === 'line'), beginAtZero: true },
                                 x: { display: (type === 'bar' || type === 'line') }
@@ -120,23 +155,26 @@
             }
             
             function renderCustomLegend(canvasId, chartInstance) {
+                // PERBAIKAN 2: Cara mencari container legenda disamakan dengan ID canvas
                 const legendContainer = document.getElementById(`legend-container-${canvasId.split('-')[1]}`);
                 if (!legendContainer) return;
 
                 const { labels, datasets } = chartInstance.data;
                 const total = datasets[0].data.reduce((sum, value) => sum + value, 0);
 
-                let html = '<ul class="custom-legend">';
+                let html = '<ul class="legend-list">';
                 labels.forEach((label, index) => {
                     const value = datasets[0].data[index];
                     const color = datasets[0].backgroundColor[index % datasets[0].backgroundColor.length];
-                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                    const isLikert = !isNaN(label) && parseFloat(label) >= 1 && parseFloat(label) <= 5;
+                    const labelText = isLikert ? `Responden yang memberi nilai <strong>${label}</strong>` : `Responden yang memilih '<strong>${label}</strong>'`;
+
                     html += `
                         <li class="legend-item">
                             <span class="legend-color-box" style="background-color: ${color}"></span>
-                            <span class="legend-label">Responden yang memilih '${label}'</span>
+                            <span class="legend-label">${labelText}</span>
                             <span class="legend-value">${value}</span>
-                            <span class="legend-percent">(${percentage}%)</span>
+                            <span class="legend-percent">(${(total > 0 ? (value / total) * 100 : 0).toFixed(1)}%)</span>
                         </li>
                     `;
                 });

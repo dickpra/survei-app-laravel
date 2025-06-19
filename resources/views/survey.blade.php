@@ -14,7 +14,8 @@
         .question-block { margin-bottom: 1.75rem; padding: 1.25rem; border-radius: 0.5rem; border: 1px solid #e5e7eb; transition: box-shadow 0.2s; }
         .question-block:focus-within { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
         .question-label { font-weight: 600; display: block; margin-bottom: 0.75rem; color: #374151; }
-        input[type="text"], input[type="number"], input[type="date"], select, textarea { width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s; }
+        input[type="text"], input[type="number"], input[type="date"], select, 
+        textarea { width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s; }
         input:focus, select:focus, textarea:focus { border-color: #4f46e5; outline: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
         .radio-group label { font-weight: normal; margin-left: 0.5rem; }
         .radio-item { display: flex; align-items: center; margin-bottom: 0.5rem; }
