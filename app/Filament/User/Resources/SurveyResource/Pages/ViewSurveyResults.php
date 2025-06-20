@@ -24,7 +24,7 @@ class ViewSurveyResults extends Page
     public function mount(): void
     {
         // Pastikan user hanya bisa melihat survei miliknya
-        abort_unless($this->record->user_id === auth()->id(), 403);
+        abort_unless($this->record->user_id == auth()->id(), 403);
 
         $this->totalResponses = $this->record->responses()->count();
         $this->processResults();

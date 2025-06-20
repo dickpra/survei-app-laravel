@@ -18,7 +18,9 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Filament\User\Pages\Dashboard;
-
+use App\Filament\User\Pages\Auth\Login;
+use App\Filament\User\Pages\Auth\LoginCustom;
+use App\Filament\User\Pages\Auth\Register;
 
 class UserPanelProvider extends PanelProvider
 {
@@ -27,8 +29,10 @@ class UserPanelProvider extends PanelProvider
         return $panel
             ->id('user')
             ->path('user')
-            ->registration()
-            ->login()
+            // ->registration()
+            ->login(LoginCustom::class)
+            ->registration(Register::class)
+            // ->login()
             // ->authGuard('user')
             ->authGuard('user') 
             ->colors([
