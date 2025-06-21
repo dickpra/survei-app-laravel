@@ -8,7 +8,7 @@ use Filament\Http\Responses\Auth\Contracts\LoginResponse;
 use Filament\Pages\Auth\Login as BaseLogin;
 use Illuminate\Validation\ValidationException;
 
-class LoginCustom extends BaseLogin
+class Login extends BaseLogin
 {
     /**
      * Menimpa method authenticate dengan logika custom kita.

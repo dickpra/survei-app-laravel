@@ -20,23 +20,26 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Filament\User\Pages\Dashboard;
 use App\Filament\User\Pages\Auth\Login;
 use App\Filament\User\Pages\Auth\LoginCustom;
+use App\Filament\User\Pages\Auth\LoginCustomPage;
 use App\Filament\User\Pages\Auth\Register;
+use App\Filament\User\Pages\CustomLoginPage;
 
 class UserPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
         return $panel
+            ->brandName('Platform Survei')
             ->id('user')
             ->path('user')
             // ->registration()
-            ->login(LoginCustom::class)
+            ->login(Login::class)
             ->registration(Register::class)
             // ->login()
             // ->authGuard('user')
             ->authGuard('user') 
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Pink,
             ])
             ->discoverResources(in: app_path('Filament/User/Resources'), for: 'App\\Filament\\User\\Resources')
             ->discoverPages(in: app_path('Filament/User/Pages'), for: 'App\\Filament\\User\\Pages')

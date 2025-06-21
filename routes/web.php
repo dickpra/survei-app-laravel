@@ -5,6 +5,7 @@ use App\Http\Controllers\ResponseController;
 use App\Exports\SurveyResultsExport;
 use App\Models\Survey;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Controllers\PublicDashboardController; // <-- Tambahkan ini di atas
 
 
 
@@ -20,9 +21,8 @@ use Maatwebsite\Excel\Facades\Excel;
 |
 */
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
+Route::get('/', [PublicDashboardController::class, 'index'])->name('home');
+
 
 Route::get('/s/{unique_code}', [ResponseController::class, 'show'])->name('survey.show');
 Route::post('/s/{unique_code}', [ResponseController::class, 'store'])->name('survey.store');

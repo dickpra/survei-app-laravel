@@ -1,29 +1,59 @@
 <?php
+
 namespace App\Filament\User\Pages\Auth;
 
+use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
+use Filament\Facades\Filament;
+use Filament\Http\Responses\Auth\Contracts\RegistrationResponse; // <-- DIPERBAIKI
+use Filament\Notifications\Notification;
 use Filament\Pages\Auth\Register as BaseRegister;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Auth\Events\Registered;
 
 class Register extends BaseRegister
 {
-    // Override method ini agar tidak otomatis login setelah registrasi
-    protected function getRedirectUrl(): ?string
+    /**
+     * Menimpa (override) seluruh proses registrasi untuk kontrol penuh.
+     */
+    public function register(): ?RegistrationResponse // <-- DIPERBAIKI
     {
-        // Langsung logout user yang baru mendaftar
-        Auth::logout();
+        try {
+            $this->rateLimit(2);
+        } catch (TooManyRequestsException $exception) {
+            Notification::make()
+                ->title(__('filament-panels::pages/auth/register.notifications.throttled.title', [
+                    'seconds' => $exception->secondsUntilAvailable,
+                    'minutes' => ceil($exception->secondsUntilAvailable / 60),
+                ]))
+                ->body(array_key_exists('body', __('filament-panels::pages/auth/register.notifications.throttled') ?: []) ? __('filament-panels::pages/auth/register.notifications.throttled.body', [
+                    'seconds' => $exception->secondsUntilAvailable,
+                    'minutes' => ceil($exception->secondsUntilAvailable / 60),
+                ]) : null)
+                ->danger()
+                ->send();
 
-        // Arahkan ke halaman login dengan pesan sukses
-        $this->sendNotification();
+            return null;
+        }
 
-        return route('filament.user.auth.login');
+        $data = $this->form->getState();
+        $user = $this->handleRegistration($data);
+        event(new Registered($user));
+
+        Notification::make()
+            ->title('Registrasi Berhasil!')
+            ->body('Akun Anda telah dibuat dan sedang menunggu persetujuan dari Admin.')
+            ->success()
+            ->persistent()
+            ->send();
+        
+        // Kembalikan objek Response yang benar
+        return app(RegistrationResponse::class); // <-- DIPERBAIKI
     }
 
-    protected function sendNotification(): void
+    /**
+     * Override method ini untuk memastikan tujuan redirect adalah halaman login.
+     */
+    protected function getRedirectUrl(): string
     {
-        session()->flash('notification', [
-            'title' => 'Registrasi Berhasil!',
-            'body' => 'Akun Anda telah dibuat dan sedang menunggu persetujuan dari Admin. Silakan coba login kembali nanti.',
-            'type' => 'success',
-        ]);
+        return filament()->getLoginUrl();
     }
 }
