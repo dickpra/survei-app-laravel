@@ -36,7 +36,7 @@ class UnifiedLoginController extends Controller
             $request->session()->regenerate();
             
             // Berikan path panel admin sebagai fallback
-            return redirect()->intended(config('filament.panels.admin.path', '/administrator'));
+            return redirect()->intended(config('filament.panels.admin.path', '/admin'));
         }
 
         // 2. Jika gagal sebagai admin, cek dulu apakah user ini adalah user yang belum disetujui
