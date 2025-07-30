@@ -166,19 +166,99 @@
             background-color: var(--bg-white);
             border-top: 1px solid #e2e8f0;
         }
+        @media (max-width: 1024px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .nav-links a {
+                margin-left: 0;
+                margin-right: 0.5rem;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+                padding: 0 1rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+        }
+
+        /* Responsif untuk layar HP */
+        @media (max-width: 640px) {
+            header {
+                padding: 1rem;
+            }
+
+            .logo {
+                font-size: 1.25rem;
+            }
+
+            .nav-links {
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .nav-links a {
+                margin: 0.25rem 0;
+                width: 100%;
+                text-align: center;
+            }
+
+            .hero {
+                padding: 4rem 1rem;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .hero .cta-button {
+                display: inline-block;
+                padding: 0.8rem 1.5rem;
+                font-size: 1rem;
+            }
+
+            .stats-section {
+                padding: 2rem 1rem;
+            }
+
+            .stat-card {
+                padding: 1.5rem 1rem;
+            }
+
+            .stat-card .number {
+                font-size: 2rem;
+            }
+
+            .stat-card .label {
+                font-size: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="main-container">
         <header>
-            <div class="logo">SurveyPlatform</div>
+            <div class="logo">UMIT</div>
             <nav class="nav-links">
-                @auth('web')
-                    <a href="{{ url('/user/dashboard') }}" class="button-dark">Dashboard</a>
-                @else
-                    <a href="{{ route('filament.user.auth.login') }}" class="button-dark">Login</a>
-                    <a href="{{ route('filament.user.auth.register') }}" class="button-light">Daftar Gratis</a>
-                @endauth
+            @auth('user')
+                <a href="{{ url('/user') }}" class="button-dark">Dashboard User</a>
+            @elseif(Auth::guard('admin')->check())
+                <a href="{{ url('/admin') }}" class="button-dark">Dashboard Admin</a>
+            @else
+                <a href="{{ url('/login') }}" class="button-dark">Login</a>
+                <a href="{{ route('filament.user.auth.register') }}" class="button-light">Daftar Gratis</a>
+            @endauth
             </nav>
         </header>
 
@@ -208,7 +288,7 @@
         </main>
 
         <footer>
-            © {{ date('Y') }} SurveyPlatform. Dibuat dengan Laravel & Filament.
+            © {{ date('Y') }} UMIT. All rights reserved.
         </footer>
     </div>
 </body>

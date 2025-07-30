@@ -88,7 +88,19 @@ class SurveyResource extends Resource
                 Tables\Columns\TextColumn::make('unique_code')
                     ->label('Kode Unik (Bagikan ini)')
                     ->copyable()
-                    ->copyableState(fn (string $state): string => route('survey.show', ['unique_code' => $state]))
+                    // ->copyableState(fn (string $state): string => route('survey.show', ['unique_code' => $state]))
+                    ->copyableState(function (Survey $record): string {
+                        $shortDomain = config('app.short_domain');
+
+                        // Jika domain pendek sudah diatur di .env, gunakan itu
+                        // if ($shortDomain) {
+                        //     // Gunakan https:// secara default untuk keamanan
+                        //     return "https://{$shortDomain}/{$record->unique_code}";
+                        // }
+
+                        // Jika tidak, gunakan route standar yang lama sebagai fallback
+                        return route('survey.show', ['unique_code' => $record->unique_code]);
+                    })
                     ->copyMessage('Link survei berhasil disalin!')
                     ->badge(),
                 Tables\Columns\TextColumn::make('questionnaireTemplate.title')

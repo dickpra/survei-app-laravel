@@ -23,6 +23,9 @@ use App\Filament\User\Pages\Auth\LoginCustom;
 use App\Filament\User\Pages\Auth\LoginCustomPage;
 use App\Filament\User\Pages\Auth\Register;
 use App\Filament\User\Pages\CustomLoginPage;
+use Filament\Navigation\MenuItem; // <-- TAMBAHKAN USE STATEMENT INI
+
+
 
 class UserPanelProvider extends PanelProvider
 {
@@ -32,12 +35,19 @@ class UserPanelProvider extends PanelProvider
             ->brandName('Platform Survei')
             ->id('user')
             ->path('user')
+            ->profile()
+            ->authGuard('user') 
+            ->userMenuItems([
+                MenuItem::make()
+                    ->label('Profil Saya')
+                    ->icon('heroicon-o-user-circle')
+                    // getProfileUrl() akan otomatis mengarah ke /user/profile
+                    ->url(fn (): string => filament()->getProfileUrl()),
+            ])
             // ->registration()
-            ->login(Login::class)
+            // ->login(Login::class)
             ->registration(Register::class)
             // ->login()
-            // ->authGuard('user')
-            ->authGuard('user') 
             ->colors([
                 'primary' => Color::Pink,
             ])

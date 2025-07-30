@@ -6,6 +6,7 @@ use App\Exports\SurveyResultsExport;
 use App\Models\Survey;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\PublicDashboardController; // <-- Tambahkan ini di atas
+use App\Http\Controllers\Auth\UnifiedLoginController; // <-- Import
 
 
 
@@ -23,6 +24,16 @@ use App\Http\Controllers\PublicDashboardController; // <-- Tambahkan ini di atas
 
 Route::get('/', [PublicDashboardController::class, 'index'])->name('home');
 
+//Optional short link
+// Route::domain(config('app.short_domain'))->group(function () {
+//     // Route ini akan menangani URL seperti: https://s.platform-survei.com/KODEUNIK
+//     Route::get('/{unique_code}', [ResponseController::class, 'show'])->name('survey.shortlink');
+// });
+
+Route::middleware('multilogin')->group(function () {
+    Route::get('/login', [UnifiedLoginController::class, 'create'])->name('login');
+    Route::post('/login', [UnifiedLoginController::class, 'store'])->name('login.authenticate');
+});
 
 Route::get('/s/{unique_code}', [ResponseController::class, 'show'])->name('survey.show');
 Route::post('/s/{unique_code}', [ResponseController::class, 'store'])->name('survey.store');
