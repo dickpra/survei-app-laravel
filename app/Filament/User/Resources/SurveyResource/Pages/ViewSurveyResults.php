@@ -26,7 +26,7 @@ class ViewSurveyResults extends Page
             $this->processResults();
         }
     }
-    
+
     protected function getHeaderActions(): array
     {
         return [
@@ -39,64 +39,28 @@ class ViewSurveyResults extends Page
     }
 
     /**
-     * Membuat label Likert otomatis untuk skala 1–3, 1–4, 1–5, 1–6, 1–7
+     * Label Likert standar (SELALU urutan 1..N). Tidak pernah dibalik oleh manner.
      */
-    protected function generateLikertLabels(int $scale, string $manner): array
+    protected function generateLikertLabels(int $scale): array
     {
-        $baseLabels = [
-            3 => [
-                1 => 'Tidak Setuju',
-                2 => 'Netral',
-                3 => 'Setuju',
-            ],
-            4 => [
-                1 => 'Sangat Tidak Setuju',
-                2 => 'Tidak Setuju',
-                3 => 'Setuju',
-                4 => 'Sangat Setuju',
-            ],
-            5 => [
-                1 => 'Sangat Tidak Setuju',
-                2 => 'Tidak Setuju',
-                3 => 'Netral',
-                4 => 'Setuju',
-                5 => 'Sangat Setuju',
-            ],
-            6 => [
-                1 => 'Sangat Tidak Setuju',
-                2 => 'Tidak Setuju',
-                3 => 'Agak Tidak Setuju',
-                4 => 'Agak Setuju',
-                5 => 'Setuju',
-                6 => 'Sangat Setuju',
-            ],
-            7 => [
-                1 => 'Sangat Tidak Setuju',
-                2 => 'Tidak Setuju',
-                3 => 'Agak Tidak Setuju',
-                4 => 'Netral',
-                5 => 'Agak Setuju',
-                6 => 'Setuju',
-                7 => 'Sangat Setuju',
-            ],
+        $map = [
+            3 => [1 => 'Tidak Setuju', 2 => 'Netral', 3 => 'Setuju'],
+            4 => [1 => 'Sangat Tidak Setuju', 2 => 'Tidak Setuju', 3 => 'Setuju', 4 => 'Sangat Setuju'],
+            5 => [1 => 'Sangat Tidak Setuju', 2 => 'Tidak Setuju', 3 => 'Netral', 4 => 'Setuju', 5 => 'Sangat Setuju'],
+            6 => [1 => 'Sangat Tidak Setuju', 2 => 'Tidak Setuju', 3 => 'Agak Tidak Setuju', 4 => 'Agak Setuju', 5 => 'Setuju', 6 => 'Sangat Setuju'],
+            7 => [1 => 'Sangat Tidak Setuju', 2 => 'Tidak Setuju', 3 => 'Agak Tidak Setuju', 4 => 'Netral', 5 => 'Agak Setuju', 6 => 'Setuju', 7 => 'Sangat Setuju'],
         ];
+        if (isset($map[$scale])) return $map[$scale];
 
-        $labels = $baseLabels[$scale] ?? [];
-        // Balik urutan jika manner negative
-        if ($manner === 'negative') {
-            $reversed = [];
-            foreach ($labels as $key => $label) {
-                $reversed[$scale + 1 - $key] = $label;
-            }
-            ksort($reversed);
-            return $reversed;
-        }
+        // fallback label generik
+        $labels = [];
+        for ($i = 1; $i <= $scale; $i++) $labels[$i] = "Skor $i";
         return $labels;
     }
 
     protected function processResults(): void
     {
-        $allResponses = $this->record->responses()->pluck('answers');
+        $allResponses = $this->record->responses()->pluck('answers'); // Collection of arrays
         $template = $this->record->questionnaireTemplate;
 
         // ---------------- DEMOGRAFIS ----------------
@@ -105,12 +69,17 @@ class ViewSurveyResults extends Page
                 $questionText = $question['question_text'] ?? "Demografis #".($index + 1);
                 $answers = $allResponses->pluck("demographic.{$index}.answer")->filter();
 
-                if ($question['type'] === 'dropdown') {
-                // [FIX] Tambahkan ->all() di sini untuk mengubah Collection menjadi array
-                $this->results['demographic'][$questionText] = ['type' => 'aggregate', 'answers' => $answers->countBy()->all()];
-            } else {
-                $this->results['demographic'][$questionText] = ['type' => 'list', 'answers' => $answers->all()];
-            }
+                if (($question['type'] ?? null) === 'dropdown') {
+                    $this->results['demographic'][$questionText] = [
+                        'type' => 'aggregate',
+                        'answers' => $answers->countBy()->all(),
+                    ];
+                } else {
+                    $this->results['demographic'][$questionText] = [
+                        'type' => 'list',
+                        'answers' => $answers->all(),
+                    ];
+                }
             }
         }
 
@@ -118,91 +87,102 @@ class ViewSurveyResults extends Page
         if (!empty($template->likert_questions)) {
             foreach ($template->likert_questions as $index => $question) {
                 $questionText = $question['question_text'] ?? "Pertanyaan #".($index + 1);
-                $scale = (int) ($question['likert_scale'] ?? 5);
-                $manner = strtolower($question['manner'] ?? 'positive'); // <-- `manner` sudah ada di sini
+                $scale  = max(1, (int) ($question['likert_scale'] ?? 5));
+                $manner = strtolower($question['manner'] ?? 'positive');
 
-                $labels = $this->generateLikertLabels($scale, $manner);
+                $labels = $this->generateLikertLabels($scale);
 
-                $answers = $allResponses->pluck("likert.{$index}.answer")
-                    ->filter()
-                    ->map(fn ($v) => max(1, min($scale, (int)$v)));
+                // Kumpulkan nilai per respons + guard _flipped (kompatibel data lama & baru)
+                $values = $this->record->responses->map(function ($resp) use ($index, $scale, $manner) {
+                    $node = data_get($resp->answers, "likert.$index", []);
+                    if ($node === [] || !isset($node['answer'])) return null;
 
-                if ($answers->isEmpty()) {
+                    $v = (int) $node['answer'];
+                    $v = max(1, min($scale, $v));
+
+                    $flippedFlag = (int) ($node['_flipped'] ?? 0);
+                    if ($manner === 'negative' && $flippedFlag !== 1) {
+                        // data lama: balik di backend
+                        $v = ($scale + 1) - $v;
+                    }
+
+                    return $v;
+                })->filter(); // buang null
+
+                if ($values->isEmpty()) {
                     $this->results['likert'][$questionText] = null;
                     continue;
                 }
 
-                $distribution = collect(range(1, $scale))
-                    ->mapWithKeys(fn ($v) => [$v => 0])
-                    ->replace($answers->countBy()->all());
+                // Distribusi dengan kerangka lengkap 1..scale
+                $base = array_fill_keys(range(1, $scale), 0);
+                $distCounts = $values->countBy()->all();
+                $distribution = $base;
+                foreach ($distCounts as $k => $cnt) {
+                    $k = (int) $k;
+                    if ($k >= 1 && $k <= $scale) $distribution[$k] += (int) $cnt;
+                }
 
-                $adjustedScores = $answers->map(fn ($v) => $manner === 'negative' ? ($scale + 1) - $v : $v);
-
-                // [FIX] Tambahkan 'manner' => $manner ke dalam array ini
                 $this->results['likert'][$questionText] = [
-                    'distribution' => $distribution->all(),
-                    'labels' => $labels,
-                    'average_score' => round($adjustedScores->avg(), 2),
-                    'scale' => $scale,
-                    'manner' => $manner, // <-- TAMBAHKAN BARIS INI
+                    'distribution'  => $distribution,                      // lengkap 1..scale (3/4/5/6/7)
+                    'labels'        => $labels,                            // selalu “positif” 1..N
+                    'average_score' => round($values->avg(), 2),           // nilai sudah disesuaikan
+                    'scale'         => $scale,
+                    'manner'        => $manner,                            // untuk badge/warna saja
                 ];
             }
         }
     }
 
-       public function exportCsv()
-{
-    $template = $this->record->questionnaireTemplate;
-    $responses = $this->record->responses;
+    public function exportCsv()
+    {
+        $template  = $this->record->questionnaireTemplate;
+        $responses = $this->record->responses;
 
-    $demographicQuestions = collect($template->demographic_questions ?? []);
-    $likertQuestions = collect($template->likert_questions ?? []);
-
-    // --- [START] PERBAIKAN HEADER ---
-    $headers = ['Waktu Mengisi'];
-    foreach ($demographicQuestions as $q) {
-        $headers[] = $q['question_text'];
-    }
-    
-    // Modifikasi loop ini untuk menambahkan manner
-    foreach ($likertQuestions as $q) {
-        // Ambil manner, default ke 'positif' jika tidak ada
-        $manner = ucfirst($q['manner'] ?? 'positif'); 
-        $headers[] = $q['question_text'] . " ({$manner})";
-    }
-    // --- [END] PERBAIKAN HEADER ---
-
-    $filename = 'hasil-' . $this->record->unique_code . '.csv';
-
-    $callback = function () use ($headers, $responses, $demographicQuestions, $likertQuestions) {
-        $file = fopen('php://output', 'w');
-
-        // BOM UTF-8 agar Excel baca dengan benar
-        fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+        $demographicQuestions = collect($template->demographic_questions ?? []);
+        $likertQuestions      = collect($template->likert_questions ?? []);
 
         // Header
-        fputcsv($file, $headers);
-
-        // Baris jawaban (tidak perlu diubah)
-        foreach ($responses as $response) {
-            $row = [];
-            $row[] = $response->created_at->format('Y-m-d H:i:s');
-
-            foreach ($demographicQuestions as $i => $q) {
-                $row[] = $response->answers['demographic'][$i]['answer'] ?? '';
-            }
-
-            foreach ($likertQuestions as $i => $q) {
-                $row[] = $response->answers['likert'][$i]['answer'] ?? '';
-            }
-
-            fputcsv($file, $row);
+        $headers = ['Waktu Mengisi'];
+        foreach ($demographicQuestions as $q) {
+            $headers[] = $q['question_text'];
+        }
+        foreach ($likertQuestions as $q) {
+            $m = strtolower($q['manner'] ?? 'positive');
+            $mView = $m === 'negative' ? 'Negatif' : 'Positif';
+            $headers[] = $q['question_text'] . " ({$mView})";
         }
 
-        fclose($file);
-    };
+        $filename = 'hasil-' . $this->record->unique_code . '.csv';
 
-    return response()->streamDownload($callback, $filename, ['Content-Type' => 'text/csv']);
-}
+        $callback = function () use ($headers, $responses, $demographicQuestions, $likertQuestions) {
+            $file = fopen('php://output', 'w');
 
+            // BOM UTF-8
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            fputcsv($file, $headers);
+
+            foreach ($responses as $response) {
+                $row = [];
+                $row[] = $response->created_at->format('Y-m-d H:i:s');
+
+                // Demografis
+                foreach ($demographicQuestions as $i => $q) {
+                    $row[] = data_get($response->answers, "demographic.$i.answer", '');
+                }
+
+                // Likert: langsung tulis nilai yang tersimpan (sudah disesuaikan via form / guard backend)
+                foreach ($likertQuestions as $i => $q) {
+                    $row[] = data_get($response->answers, "likert.$i.answer", '');
+                }
+
+                fputcsv($file, $row);
+            }
+
+            fclose($file);
+        };
+
+        return response()->streamDownload($callback, $filename, ['Content-Type' => 'text/csv']);
+    }
 }

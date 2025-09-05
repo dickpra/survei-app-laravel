@@ -197,48 +197,93 @@
                     @foreach ($results['likert'] as $question => $result)
                         @if ($result)
                             @php
-                                $dist = $result['distribution'] ?? [];
-                                ksort($dist, SORT_NUMERIC);
-                                $scores = array_map('intval', array_keys($dist));
-                                $values = array_values($dist);
-                                $labels = [];
-                                foreach ($dist as $score => $count) {
-                                    $labels[] = ($result['labels'][$score] ?? "Skor $score") . " ($score)";
-                                }
-                                $total = array_sum($values) ?: 0;
+                            // Persiapan data & statistik
+                            $origDist = $result['distribution'] ?? [];
+                            $scale    = (int) ($result['scale'] ?? 5);
+                            $manner   = strtolower($result['manner'] ?? 'positive');
 
-                                $mean = $result['average_score'] ?? null;
-                                if ($mean === null && $total > 0) {
-                                    $sum = 0; foreach ($dist as $s => $c) { $sum += (int)$s * (int)$c; }
-                                    $mean = round($sum / $total, 2);
+                            // 1) Buat kerangka lengkap 1..scale agar tidak "kepotong"
+                            $base = array_fill_keys(range(1, $scale), 0);
+                            // normalisasi distribusi mentah ke kerangka lengkap (pastikan int)
+                            $distRaw = $base;
+                            foreach ($origDist as $s => $c) {
+                                $s = (int) $s;
+                                if ($s >= 1 && $s <= $scale) {
+                                    $distRaw[$s] += (int) $c;
                                 }
+                            }
 
-                                $median = null;
-                                if ($total > 0) {
-                                    $mid = ($total + 1) / 2; $run = 0; $medScore = null;
-                                    foreach ($dist as $s => $c) { $run += $c; if ($run >= $mid) { $medScore = (int)$s; break; } }
-                                    $median = $medScore;
+                            // 2) REMAP NILAI HANYA UNTUK TAMPILAN (label tetap 1..scale)
+                            if ($manner === 'negative') {
+                                $dist = $base; // siapkan kerangka tujuan 1..scale
+                                foreach ($distRaw as $s => $c) {
+                                    $dist[($scale + 1) - $s] += (int) $c; // pindah s -> (scale+1-s)
                                 }
+                            } else {
+                                $dist = $distRaw;
+                            }
 
-                                $modeScore = null;
-                                if (!empty($dist)) {
-                                    $maxV = max($values);
-                                    foreach ($dist as $s => $c) if ($c === $maxV) { $modeScore = (int)$s; break; }
+                            // 3) Urut tampilan selalu 1..N
+                            ksort($dist, SORT_NUMERIC);
+
+                            // 4) Siapkan labels & values PERSIS sepanjang skala
+                             $labels = [];
+                            $values = [];
+                            foreach (range(1, $scale) as $score) {
+                                // angka yang DITAMPILKAN di label:
+                                // - positive: 1..N
+                                // - negative: dibalik → (scale + 1 - score)
+                                $displayNumber = ($manner === 'negative') ? ($scale + 1 - $score) : $score;
+
+                                // teks label tetap dari mapping POSITIF ($result['labels'][$score])
+                                $labelText = $result['labels'][$score] ?? "Skor $score";
+
+                                $labels[] = $labelText . " ($displayNumber)";
+                                $values[] = (int) ($dist[$score] ?? 0);
+                            }
+
+                            $total = array_sum($values) ?: 0;
+
+                            // 5) Statistik untuk tampilan (berdasarkan $dist yang SUDAH diremap)
+                            $mean = $result['average_score'] ?? null; // backend sudah disesuaikan
+
+                            // median
+                            $median = null;
+                            if ($total > 0) {
+                                $mid = ($total + 1) / 2; $run = 0; $medScore = null;
+                                foreach (range(1, $scale) as $s) {
+                                    $run += (int) ($dist[$s] ?? 0);
+                                    if ($run >= $mid) { $medScore = $s; break; }
                                 }
+                                $median = $medScore;
+                            }
 
-                                $scale = (int)($result['scale'] ?? max($scores, [0]));
-                                $top2 = $bottom2 = 0;
-                                if ($scale >= 5 && $total > 0) {
-                                    $top2 = ( ($dist[$scale] ?? 0) + ($dist[$scale-1] ?? 0) ) / $total * 100;
-                                    $bottom2 = ( ($dist[1] ?? 0) + ($dist[2] ?? 0) ) / $total * 100;
-                                } elseif ($scale >= 3 && $total > 0) {
-                                    $top2 = (($dist[$scale] ?? 0) / $total) * 100;
-                                    $bottom2 = (($dist[1] ?? 0) / $total) * 100;
+                            // mode
+                            $modeScore = null;
+                            if ($total > 0) {
+                                $maxC = max($values);
+                                foreach (range(1, $scale) as $s) {
+                                    if ((int) ($dist[$s] ?? 0) === (int) $maxC) { $modeScore = $s; break; }
                                 }
+                            }
 
-                                $manner = strtolower($result['manner'] ?? 'positive');
-                                $chartIndex = "likert-{$loop->index}";
-                            @endphp
+                            // Top/Bottom Box pakai dist yang SUDAH diremap (dinamis berdasar skala)
+                            $top2 = $bottom2 = 0;
+                            if ($total > 0) {
+                                if ($scale >= 5) {
+                                    $top2    = ( ( ($dist[$scale] ?? 0) + ($dist[$scale-1] ?? 0) ) / $total ) * 100;
+                                    $bottom2 = ( ( ($dist[1] ?? 0)       + ($dist[2]       ?? 0) ) / $total ) * 100;
+                                } else {
+                                    // skala 3–4: pakai top-1 / bottom-1
+                                    $top2    = ( ($dist[$scale] ?? 0) / $total ) * 100;
+                                    $bottom2 = ( ($dist[1]      ?? 0) / $total ) * 100;
+                                }
+                            }
+
+                            $chartIndex = "likert-{$loop->index}";
+                        @endphp
+
+
 
                             <div class="rounded-xl border border-gray-200 bg-white shadow-sm p-4 space-y-4">
                                 <div class="flex justify-between items-center flex-wrap gap-2">
@@ -269,13 +314,15 @@
                                         {{-- Chart + legend --}}
                                         <div class="md:col-span-3 space-y-4">
                                             <div class="w-full min-h-[20rem]" wire:ignore>
-                                                <canvas
-                                                    id="{{ $chartIndex }}"
-                                                    data-labels='@json($labels)'
-                                                    data-values='@json(array_values($values))'
-                                                    data-seed="{{ 100 + $loop->index }}"
-                                                    data-manner="{{ $manner }}"
-                                                ></canvas>
+                                               <canvas
+    id="{{ $chartIndex }}"
+    data-labels='@json($labels)'
+    data-values='@json($values)'
+    data-seed="{{ 100 + $loop->index }}"
+    data-manner="{{ $manner }}"
+></canvas>
+
+
                                             </div>
                                             <div id="legend-container-{{ $chartIndex }}"></div>
                                         </div>
