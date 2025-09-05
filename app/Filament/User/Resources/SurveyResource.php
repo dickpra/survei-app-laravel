@@ -14,49 +14,70 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 // use Filament\Resources\Pages\Action;
-use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Auth;
-
+use Filament\Forms\Components\Select;
+// --- [START] BAGIAN YANG DIPERBAIKI ---
+use Filament\Forms\Components\Actions\Action; // <-- Ganti ke namespace yang benar
+use Filament\Forms\Get;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
+// --- [END] BAGIAN YANG DIPERBAIKI ---
 
 class SurveyResource extends Resource
 {
-    
     protected static ?string $model = Survey::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static ?string $navigationGroup = 'Researcher';
 
-    /**
-     * Memfilter data agar user hanya melihat survei miliknya.
-     *
-     * @return Builder
-     */
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        return $user && $user->is_researcher;
+    }
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->where('user_id', auth()->id());
     }
-    /**
-     * Mendefinisikan form untuk membuat survei baru.
-     *
-     * @param Form $form
-     * @return Form
-     */
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('questionnaire_template_id')
+                Select::make('questionnaire_template_id')
                     ->label('Pilih Template Kuesioner')
-                    ->options(QuestionnaireTemplate::all()->pluck('title', 'id'))
+                    ->options(
+                        QuestionnaireTemplate::whereNotNull('published_at')->pluck('title', 'id')
+                    )
+                    ->live()
+                    ->searchable()
                     ->required()
-                    ->searchable(),
+                    ->suffixAction(
+                        Action::make('preview')
+                            ->label('Preview')
+                            ->icon('heroicon-o-eye')
+                            ->modalSubmitAction(false)
+                            ->modalCancelActionLabel('Tutup')
+                            ->modalHeading(fn (Get $get) => QuestionnaireTemplate::find($get('questionnaire_template_id'))?->title)
+                            ->modalContent(function (Get $get): ?\Illuminate\View\View {
+                                $templateId = $get('questionnaire_template_id');
+                                if (!$templateId) return null;
+
+                                // [FIX] Pass the full template object to the new view
+                                return view('filament.previews.questionnaire', [
+                                    'template' => QuestionnaireTemplate::find($templateId),
+                                ]);
+                            })
+                            ->visible(fn (Get $get) => filled($get('questionnaire_template_id'))),
+                    ),
                 Forms\Components\TextInput::make('title')
                     ->label('Judul Survei Anda')
                     ->helperText('Beri nama yang spesifik untuk survei Anda.')
                     ->required()
                     ->maxLength(255),
                 
-                // TAMBAHKAN TOGGLE DI SINI
                 Forms\Components\Toggle::make('enforce_single_submission')
                     ->label('Hanya Boleh Diisi Sekali per Responden')
                     ->helperText('Jika aktif, responden akan dibatasi via cookie & IP address.')

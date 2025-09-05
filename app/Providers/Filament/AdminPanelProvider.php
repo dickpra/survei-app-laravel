@@ -25,13 +25,15 @@ class AdminPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $panel
-            ->brandName('Admin')
+            ->brandName('UMIT Admin')
             ->default()
             ->id('admin')
             ->path('admin')
             // ->login()
             ->profile()
             ->authGuard('admin')
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('30s')
             ->colors([
                 'primary' => Color::Green,
             ])

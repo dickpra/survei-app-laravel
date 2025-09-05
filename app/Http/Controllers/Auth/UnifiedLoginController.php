@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
-use App\Models\User; // Import model Assessor
+use App\Models\User;
 
 class UnifiedLoginController extends Controller
 {
@@ -46,17 +46,11 @@ class UnifiedLoginController extends Controller
         //         'email' => __('Akun Anda sedang menunggu persetujuan admin atau telah ditolak.'),
         //     ]);
         // }
-        if ($user && $user->status == 'pending') {
+        if ($user && $user->approved_at === null) {
             // Jika ya, langsung lemparkan pesan error spesifik kita.
             // Proses autentikasi berhenti di sini dan tidak akan melanjutkan ke pengecekan password.
             throw ValidationException::withMessages([
-                'data.email' => __('Akun Anda sedang menunggu persetujuan admin'),
-            ]);
-        }if ($user && $user->status == 'rejected') {
-            // Jika tidak, atau jika asesornya sudah 'approved', maka kita melanjutkan ke proses
-            // pengecekan password.
-            throw ValidationException::withMessages([
-                'data.email' => __('Akun Anda ditolak admin'),
+                'data.email' => __('Akun Anda sedang menunggu persetujuan admin/telah ditolak'),
             ]);
         }
 

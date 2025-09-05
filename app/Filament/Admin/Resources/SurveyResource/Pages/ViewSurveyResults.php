@@ -4,29 +4,29 @@ namespace App\Filament\Admin\Resources\SurveyResource\Pages;
 
 use App\Filament\Admin\Resources\SurveyResource;
 use App\Models\Survey;
-use Filament\Resources\Pages\Page;
-use Illuminate\Support\Facades\DB;
 use Filament\Actions\Action;
-
+use Filament\Resources\Pages\Page;
 
 class ViewSurveyResults extends Page
 {
     protected static string $resource = SurveyResource::class;
-
     protected static string $view = 'filament.admin.resources.survey-resource.pages.view-survey-results';
 
-    // Properti publik untuk menampung data
     public Survey $record;
-    public $totalResponses = 0;
-    public $results = [];
+    public int $totalResponses = 0;
+    public array $results = [
+        'demographic' => [],
+        'likert' => [],
+    ];
 
     public function mount(): void
     {
-        // TIDAK ADA PENGECEKAN KEPEMILIKAN DI SINI, KARENA ADMIN BOLEH MELIHAT SEMUA
         $this->totalResponses = $this->record->responses()->count();
-        $this->processResults();
+        if ($this->totalResponses > 0) {
+            $this->processResults();
+        }
     }
-
+    
     protected function getHeaderActions(): array
     {
         return [
@@ -34,118 +34,175 @@ class ViewSurveyResults extends Page
                 ->label('Ekspor ke CSV')
                 ->icon('heroicon-o-document-arrow-down')
                 ->color('success')
-                ->action(function () {
-                    $filename = 'hasil-' . $this->record->unique_code . '.csv';
-
-                    // --- PERUBAHAN 1: Mengambil Header dari JSON ---
-                    // Ambil semua pertanyaan dari semua blok dan jadikan satu daftar
-                    $questions = collect($this->record->questionnaireTemplate->content_blocks)
-                        ->pluck('data.questions')
-                        ->flatten(1);
-                    
-                    // Buat header dari konten pertanyaan
-                    $headers = ['ID Responden', 'Waktu Mengisi'];
-                    foreach ($questions as $question) {
-                        // Pastikan question adalah array dan memiliki 'content'
-                        if (is_array($question) && isset($question['content'])) {
-                            $headers[] = $question['content'];
-                        }
-                    }
-
-                    // --- PERUBAHAN 2: Mengambil Data dari JSON ---
-                    $responses = $this->record->responses; // Ambil semua response
-                    
-                    $callback = function () use ($headers, $responses, $questions) {
-                        $file = fopen('php://output', 'w');
-                        fputcsv($file, $headers);
-
-                        // Loop melalui setiap baris data response
-                        foreach ($responses as $response) {
-                            $rowData = [
-                                $response->id,
-                                $response->created_at->format('Y-m-d H:i:s'),
-                            ];
-                            
-                            // Loop melalui setiap pertanyaan untuk memastikan urutan kolom benar
-                            foreach ($questions as $question) {
-                                if (is_array($question) && isset($question['content'])) {
-                                    $questionContent = $question['content'];
-                                    // Ambil jawaban dari kolom JSON 'answers' di response
-                                    $rowData[] = $response->answers[$questionContent] ?? '';
-                                }
-                            }
-                            fputcsv($file, $rowData);
-                        }
-                        fclose($file);
-                    };
-
-                    return response()->streamDownload($callback, $filename, [
-                        'Content-Type' => 'text/csv',
-                        'Content-Disposition' => "attachment; filename=\"$filename\"",
-                    ]);
-                }),
+                ->action(fn () => $this->exportCsv()),
         ];
     }
 
-    protected function processResults(): void
-{
-    $allResponses = $this->record->responses()->pluck('answers');
-    $processedResults = [];
+    /**
+     * Membuat label Likert otomatis untuk skala 1–3, 1–4, 1–5, 1–6, 1–7
+     */
+    protected function generateLikertLabels(int $scale, string $manner): array
+    {
+        $baseLabels = [
+            3 => [
+                1 => 'Tidak Setuju',
+                2 => 'Netral',
+                3 => 'Setuju',
+            ],
+            4 => [
+                1 => 'Sangat Tidak Setuju',
+                2 => 'Tidak Setuju',
+                3 => 'Setuju',
+                4 => 'Sangat Setuju',
+            ],
+            5 => [
+                1 => 'Sangat Tidak Setuju',
+                2 => 'Tidak Setuju',
+                3 => 'Netral',
+                4 => 'Setuju',
+                5 => 'Sangat Setuju',
+            ],
+            6 => [
+                1 => 'Sangat Tidak Setuju',
+                2 => 'Tidak Setuju',
+                3 => 'Agak Tidak Setuju',
+                4 => 'Agak Setuju',
+                5 => 'Setuju',
+                6 => 'Sangat Setuju',
+            ],
+            7 => [
+                1 => 'Sangat Tidak Setuju',
+                2 => 'Tidak Setuju',
+                3 => 'Agak Tidak Setuju',
+                4 => 'Netral',
+                5 => 'Agak Setuju',
+                6 => 'Setuju',
+                7 => 'Sangat Setuju',
+            ],
+        ];
 
-    foreach ($this->record->questionnaireTemplate->content_blocks as $block) {
-        if ($block['type'] !== 'section_block') continue;
-
-        foreach ($block['data']['questions'] as $question) {
-            $questionContent = $question['content'];
-            $questionType = $question['type'];
-            $tempAnswers = [];
-
-            foreach ($allResponses as $responseAnswers) {
-                if (isset($responseAnswers[$questionContent])) {
-                    $tempAnswers[] = $responseAnswers[$questionContent];
-                }
+        $labels = $baseLabels[$scale] ?? [];
+        // Balik urutan jika manner negative
+        if ($manner === 'negative') {
+            $reversed = [];
+            foreach ($labels as $key => $label) {
+                $reversed[$scale + 1 - $key] = $label;
             }
-            
-            if ($questionType === 'isian pendek') {
-                $processedResults[$questionContent] = [
-                    'type' => 'isian pendek',
-                    'content' => $questionContent,
-                    'answers' => $tempAnswers,
-                ];
-            } elseif ($questionType === 'skala likert') {
-                $likertResult = [];
-                $answerCounts = array_count_values($tempAnswers);
+            ksort($reversed);
+            return $reversed;
+        }
+        return $labels;
+    }
 
-                // --- BAGIAN BARU: Terjemahkan nilai numerik ke label ---
-                // Cek apakah ada label custom yang disediakan
-                if (!empty($question['options'])) {
-                    // Loop melalui label custom untuk memastikan urutan benar
-                    foreach ($question['options'] as $index => $labelText) {
-                        $numericValue = $index + 1;
-                        $likertResult[$labelText] = $answerCounts[$numericValue] ?? 0;
-                    }
-                } else {
-                    // Jika tidak ada label custom, gunakan angka sebagai label
-                    for ($i = 1; $i <= 5; $i++) {
-                        $likertResult[(string)$i] = $answerCounts[$i] ?? 0;
-                    }
+    protected function processResults(): void
+    {
+        $allResponses = $this->record->responses()->pluck('answers');
+        $template = $this->record->questionnaireTemplate;
+
+        // ---------------- DEMOGRAFIS ----------------
+        if (!empty($template->demographic_questions)) {
+            foreach ($template->demographic_questions as $index => $question) {
+                $questionText = $question['question_text'] ?? "Demografis #".($index + 1);
+                $answers = $allResponses->pluck("demographic.{$index}.answer")->filter();
+
+                if ($question['type'] === 'dropdown') {
+                // [FIX] Tambahkan ->all() di sini untuk mengubah Collection menjadi array
+                $this->results['demographic'][$questionText] = ['type' => 'aggregate', 'answers' => $answers->countBy()->all()];
+            } else {
+                $this->results['demographic'][$questionText] = ['type' => 'list', 'answers' => $answers->all()];
+            }
+            }
+        }
+
+        // ---------------- LIKERT ----------------
+        if (!empty($template->likert_questions)) {
+            foreach ($template->likert_questions as $index => $question) {
+                $questionText = $question['question_text'] ?? "Pertanyaan #".($index + 1);
+                $scale = (int) ($question['likert_scale'] ?? 5);
+                $manner = strtolower($question['manner'] ?? 'positive');
+
+                $labels = $this->generateLikertLabels($scale, $manner);
+
+                $answers = $allResponses->pluck("likert.{$index}.answer")
+                    ->filter()
+                    ->map(fn ($v) => max(1, min($scale, (int)$v)));
+
+                if ($answers->isEmpty()) {
+                    $this->results['likert'][$questionText] = null;
+                    continue;
                 }
 
-                $processedResults[$questionContent] = [
-                    'type' => 'agregat',
-                    'content' => $questionContent,
-                    'answers' => $likertResult,
-                ];
-            } else { // Untuk 'pilihan ganda', 'dropdown', dll.
-                $processedResults[$questionContent] = [
-                    'type' => 'agregat',
-                    'content' => $questionContent,
-                    'answers' => array_count_values($tempAnswers),
+                $distribution = collect(range(1, $scale))
+                    ->mapWithKeys(fn ($v) => [$v => 0])
+                    ->replace($answers->countBy()->all());
+
+                $adjustedScores = $answers->map(fn ($v) => $manner === 'negative' ? ($scale + 1) - $v : $v);
+
+                $this->results['likert'][$questionText] = [
+                    'distribution' => $distribution->all(),
+                    'labels' => $labels,
+                    'average_score' => round($adjustedScores->avg(), 2),
+                    'scale' => $scale,
+                    'manner' => $manner,
                 ];
             }
         }
     }
-    
-    $this->results = $processedResults;
-}
+
+    public function exportCsv()
+        {
+            $template = $this->record->questionnaireTemplate;
+            $responses = $this->record->responses;
+
+            $demographicQuestions = collect($template->demographic_questions ?? []);
+            $likertQuestions = collect($template->likert_questions ?? []);
+
+            // --- [START] PERBAIKAN HEADER ---
+            $headers = ['Waktu Mengisi'];
+            foreach ($demographicQuestions as $q) {
+                $headers[] = $q['question_text'];
+            }
+            
+            // Modifikasi loop ini untuk menambahkan manner
+            foreach ($likertQuestions as $q) {
+                // Ambil manner, default ke 'positif' jika tidak ada
+                $manner = ucfirst($q['manner'] ?? 'positif'); 
+                $headers[] = $q['question_text'] . " ({$manner})";
+            }
+            // --- [END] PERBAIKAN HEADER ---
+
+            $filename = 'hasil-' . $this->record->unique_code . '.csv';
+
+            $callback = function () use ($headers, $responses, $demographicQuestions, $likertQuestions) {
+                $file = fopen('php://output', 'w');
+
+                // BOM UTF-8 agar Excel baca dengan benar
+                fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
+                // Header
+                fputcsv($file, $headers);
+
+                // Baris jawaban (tidak perlu diubah)
+                foreach ($responses as $response) {
+                    $row = [];
+                    $row[] = $response->created_at->format('Y-m-d H:i:s');
+
+                    foreach ($demographicQuestions as $i => $q) {
+                        $row[] = $response->answers['demographic'][$i]['answer'] ?? '';
+                    }
+
+                    foreach ($likertQuestions as $i => $q) {
+                        $row[] = $response->answers['likert'][$i]['answer'] ?? '';
+                    }
+
+                    fputcsv($file, $row);
+                }
+
+                fclose($file);
+            };
+
+            return response()->streamDownload($callback, $filename, ['Content-Type' => 'text/csv']);
+        }
+
+
 }

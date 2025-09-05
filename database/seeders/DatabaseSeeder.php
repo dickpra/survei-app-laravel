@@ -26,11 +26,11 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('user12345'),
         ]);
         // $this->call(SoalSurveySeeder::class);
-        $this->call([
+        // $this->call([
             
-            TemplateSeeder::class,
-            SurveyAndResponseSeeder::class,
-        ]);
+        //     // TemplateSeeder::class,
+        //     // SurveyAndResponseSeeder::class,
+        // ]);
         // \App\Models\User::factory(10)->create();
 
         // \App\Models\User::factory()->create([

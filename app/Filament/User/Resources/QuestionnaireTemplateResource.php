@@ -1,21 +1,21 @@
 <?php
 
-namespace App\Filament\Admin\Resources;
+namespace App\Filament\User\Resources;
 
-use App\Filament\Admin\Resources\QuestionnaireTemplateResource\Pages;
+use App\Filament\User\Resources\QuestionnaireTemplateResource\Pages;
 use App\Models\QuestionnaireTemplate;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
-use Illuminate\Support\Facades\Auth;    
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 
@@ -23,16 +23,23 @@ class QuestionnaireTemplateResource extends Resource
 {
     protected static ?string $model = QuestionnaireTemplate::class;
     protected static ?string $navigationIcon = 'heroicon-o-document-duplicate';
+    protected static ?string $navigationGroup = 'Instrument Creator';
 
+    public static function canViewAny(): bool
+    {
+        // Tampilkan jika admin ATAU jika user adalah instrument creator
+        return Auth::guard('admin')->check() || 
+            (auth()->user() && auth()->user()->is_instrument_creator);
+    }
 
     /**
      * [FIX] Menambahkan method untuk mengontrol visibilitas tombol "Create".
      */
-    // public static function canCreate(): bool
-    // {
-    //     // Izinkan pembuatan jika login sebagai admin ATAU jika user adalah instrument creator.
-    //     return Auth::guard('admin')->check() || (Auth::guard('user')->user() && Auth::guard('user')->user()->is_instrument_creator);
-    // }
+    public static function canCreate(): bool
+    {
+        // Izinkan pembuatan jika login sebagai admin ATAU jika user adalah instrument creator.
+        return Auth::guard('admin')->check() || (Auth::guard('user')->user() && Auth::guard('user')->user()->is_instrument_creator);
+    }
 
     public static function form(Form $form): Form
     {
@@ -145,15 +152,20 @@ class QuestionnaireTemplateResource extends Resource
                     })
                     ->visible(fn () => Auth::guard('admin')->check()),
                 // --- [AKHIR BAGIAN YANG DIPERBARUI] ---
-                TextColumn::make('total_questions')->label('Jumlah Pertanyaan')
-                    ->getStateUsing(fn (QuestionnaireTemplate $record): int =>
-                        count($record->demographic_questions ?? []) + count($record->likert_questions ?? [])
-                    )
-                    ->sortable(),
-                BadgeColumn::make('published_at')
+
+                // --- [BAGIAN YANG DIPERBARUI] ---
+                BadgeColumn::make('status') // Kita beri nama kolom 'status' agar lebih generik
                     ->label('Status')
-                    ->getStateUsing(fn (QuestionnaireTemplate $record): string => $record->published_at ? 'Published' : 'Draft')
-                    ->colors(['success' => 'Published', 'warning' => 'Draft']),
+                    ->getStateUsing(function (QuestionnaireTemplate $record): string {
+                        // Logika untuk menampilkan label baru
+                        return $record->published_at ? 'Approved' : 'Not Approved';
+                    })
+                    ->colors([
+                        // Warna disesuaikan dengan label baru
+                        'success' => 'Approved',
+                        'warning' => 'Not Approved',
+                    ]),
+                // --- [AKHIR BAGIAN YANG DIPERBARUI] ---
 
                 TextColumn::make('published_at')->label('Tgl. Publikasi')->dateTime('d M Y')->sortable(),
             ])

@@ -14,7 +14,7 @@ class CreateSurvey extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['user_id'] = auth()->id();
-        $data['unique_code'] = 'TEST-' . strtoupper(Str::random(8)); // Kita beri prefix beda untuk tes
+        $data['unique_code'] = 'SURV-' . strtoupper(Str::random(8)); // Kita beri prefix beda untuk tes
 
         // Jika layar ini muncul, berarti file inilah yang dieksekusi.
         // Ini adalah tes paling penting.
