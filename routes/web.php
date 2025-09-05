@@ -23,6 +23,7 @@ use App\Http\Controllers\Auth\CustomRegisterController; // <-- Import
 */
 
 Route::get('/', [PublicDashboardController::class, 'index'])->name('home');
+Route::get('/surveys/{survey:unique_code}', [PublicDashboardController::class, 'show'])->name('public.survey.results');
 
 //Optional short link
 // Route::domain(config('app.short_domain'))->group(function () {

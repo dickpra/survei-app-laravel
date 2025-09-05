@@ -44,12 +44,13 @@ class ViewSurveyResults extends Page
     protected function generateLikertLabels(int $scale): array
     {
         $map = [
-            3 => [1 => 'Tidak Setuju', 2 => 'Netral', 3 => 'Setuju'],
-            4 => [1 => 'Sangat Tidak Setuju', 2 => 'Tidak Setuju', 3 => 'Setuju', 4 => 'Sangat Setuju'],
-            5 => [1 => 'Sangat Tidak Setuju', 2 => 'Tidak Setuju', 3 => 'Netral', 4 => 'Setuju', 5 => 'Sangat Setuju'],
-            6 => [1 => 'Sangat Tidak Setuju', 2 => 'Tidak Setuju', 3 => 'Agak Tidak Setuju', 4 => 'Agak Setuju', 5 => 'Setuju', 6 => 'Sangat Setuju'],
-            7 => [1 => 'Sangat Tidak Setuju', 2 => 'Tidak Setuju', 3 => 'Agak Tidak Setuju', 4 => 'Netral', 5 => 'Agak Setuju', 6 => 'Setuju', 7 => 'Sangat Setuju'],
+            3 => [1 => 'Disagree', 2 => 'Neutral', 3 => 'Agree'],
+            4 => [1 => 'Strongly Disagree', 2 => 'Disagree', 3 => 'Agree', 4 => 'Strongly Agree'],
+            5 => [1 => 'Strongly Disagree', 2 => 'Disagree', 3 => 'Neutral', 4 => 'Agree', 5 => 'Strongly Agree'],
+            6 => [1 => 'Strongly Disagree', 2 => 'Disagree', 3 => 'Somewhat Disagree', 4 => 'Somewhat Agree', 5 => 'Agree', 6 => 'Strongly Agree'],
+            7 => [1 => 'Strongly Disagree', 2 => 'Disagree', 3 => 'Somewhat Disagree', 4 => 'Neutral', 5 => 'Somewhat Agree', 6 => 'Agree', 7 => 'Strongly Agree'],
         ];
+
         if (isset($map[$scale])) return $map[$scale];
 
         // fallback label generik

@@ -9,6 +9,8 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Notifications\Notification;
+
 
 class SurveyResource extends Resource
 {
@@ -24,12 +26,29 @@ class SurveyResource extends Resource
                 Tables\Columns\TextColumn::make('user.name')->label('Dibuat oleh')->searchable(),
                 Tables\Columns\TextColumn::make('unique_code')->label('Kode Unik'),
                 Tables\Columns\TextColumn::make('responses_count')->counts('responses')->label('Jumlah Responden'),
+                Tables\Columns\IconColumn::make('is_public')
+                    ->label('Public')
+                    ->boolean()
+                    ->tooltip(fn (Survey $record): string => $record->is_public ? 'Klik untuk Unpublish' : 'Klik untuk Publish')
+                    ->action(function (Survey $record) {
+                        // This action toggles the boolean state
+                        $record->is_public = !$record->is_public;
+                        $record->save();
+
+                        // Send a success notification
+                        Notification::make()
+                            ->title('Status Publikasi Diperbarui')
+                            ->body($record->is_public ? 'Survei sekarang ditampilkan di dasbor publik.' : 'Survei sekarang disembunyikan dari dasbor publik.')
+                            ->success()
+                            ->send();
+                    }),
             ])
             ->actions([
                 // Tambahkan tombol aksi untuk melihat hasil
                 Tables\Actions\Action::make('Lihat Hasil')
                     ->icon('heroicon-o-chart-bar')
                     ->url(fn (Survey $record): string => static::getUrl('view-survey-results', ['record' => $record])),
+                    
             ]);
     }
 
