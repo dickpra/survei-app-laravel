@@ -69,13 +69,13 @@ class UserPanelProvider extends PanelProvider
             // ])
             ->userMenuItems([
                 MenuItem::make()
-                    ->label('Profil Saya')
+                    ->label(__('Profil Saya'))
                     ->icon('heroicon-o-user-circle')
                     ->url(fn (): string => \App\Filament\User\Pages\EditProfile::getUrl()),
 
                 // --- [ADD THIS MENU ITEM] ---
                 MenuItem::make()
-                    ->label('Ajukan Peran Baru')
+                    ->label(__('Ajukan Peran Baru'))
                     ->icon('heroicon-o-sparkles')
                     ->url(fn (): string => \App\Filament\User\Pages\EditProfile::getUrl())
                     // Only show this menu item if the user is eligible for at least one new role

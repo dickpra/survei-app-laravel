@@ -58,7 +58,24 @@
       background:var(--bg-page); color:var(--text);
       transition: background-color .2s, color .2s;
     }
-
+/* --- Responsiveness & header polish --- */
+  section[id]{ scroll-margin-top: 96px }         /* biar anchor gak ketutupan sticky header */
+  .header{
+    /* transparan elegan + blur (fallback aman) */
+    background: color-mix(in oklab, var(--bg-card) 88%, transparent);
+    -webkit-backdrop-filter: saturate(180%) blur(10px);
+    backdrop-filter: saturate(180%) blur(10px);
+  }
+  /* fokus ring yang konsisten untuk aksesibilitas */
+  a:focus-visible, button:focus-visible, select:focus-visible{
+    outline: none;
+    box-shadow: 0 0 0 4px var(--ring);
+    border-color: var(--primary);
+  }
+  /* perbaiki wrapping nav di layar sempit */
+  @media (max-width: 640px){
+    .nav-wrap{flex-direction:column;align-items:flex-start;gap:.5rem}
+  }
     .brand-shadow{ box-shadow: 0 2px 6px rgba(0,0,0,.06) }
     .card{ background:var(--bg-card); border:1px solid var(--border); border-radius:1rem; box-shadow:0 4px 14px rgba(0,0,0,.04) }
     .chip{ display:inline-flex; align-items:center; gap:.5rem; padding:.375rem .625rem; border-radius:.625rem; background:var(--primary-100); color:var(--text) }
@@ -114,17 +131,24 @@
 @endphp
 
 {{-- =================== HEADER =================== --}}
-<header class="header brand-shadow sticky top-0 z-20">
-  <div class="max-w-7xl mx-auto px-4 py-4 flex items-center gap-4">
-    {{-- LEFT --}}
-    {{-- <a href="#dashboard" class="text-2xl font-extrabold" style="color:var(--primary)">UMIT</a> --}}
-    <div class="flex items-center space-x-2">
-            <img src="{{ asset('img/umit-logo.png') }}" alt="Logo" class=" h-10 w-auto">
-            {{-- <span class="text-xl font-bold text-primary-700 dark:text-accent-500">UMIX</span> --}}
-    </div>
-    {{-- CENTER NAV --}}
-    <nav id="main-nav" class="flex-1 flex justify-center">
-      <div class="flex items-center gap-5 text-sm">
+<header class="header brand-shadow sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+    <!-- Mobile: Hamburger -->
+    <button id="mobileMenuBtn"
+            class="lg:hidden inline-flex items-center justify-center p-2 rounded-md border"
+            aria-expanded="false" aria-controls="mobileNav" aria-label="Toggle navigation"
+            style="border-color:var(--border); background:var(--bg-page); color:var(--text)">
+      <i data-feather="menu" aria-hidden="true"></i>
+    </button>
+
+    <!-- Brand -->
+    <a href="#dashboard" class="flex items-center gap-2 shrink-0">
+      <img src="{{ asset('img/umit-logo.png') }}" alt="Logo UMIT" class="h-9 w-auto">
+    </a>
+
+    <!-- Desktop Nav -->
+    <nav id="main-nav" class="hidden lg:flex flex-1 justify-center">
+      <div class="flex items-center gap-6 text-sm">
         <a href="#dashboard" class="nav-link">{{ __('Dashboard') }}</a>
         <a href="#about" class="nav-link">{{ __('About Me') }}</a>
         <a href="#credit" class="nav-link">{{ __('Credit') }}</a>
@@ -133,8 +157,8 @@
       </div>
     </nav>
 
-    {{-- RIGHT (auth + theme) --}}
-    <div class="flex items-center gap-2">
+    <!-- Desktop Right -->
+    <div class="hidden sm:flex items-center gap-2">
       @auth('user')
         <a href="{{ url('/user') }}" class="btn-dark px-3 py-2 rounded-lg">Dashboard User</a>
       @elseif(Auth::guard('admin')->check())
@@ -142,20 +166,49 @@
       @else
         <a href="{{ url('/login') }}" class="px-3 py-2 rounded-lg" style="color:var(--text)">Login</a>
         <a href="{{ url('/register') }}" class="btn-light px-3 py-2 rounded-lg">{{ __('Daftar Gratis') }}</a>
-      @endauth
+      @endauth>
 
-      <button id="themeToggle" type="button" class="toggle">
+      {{-- <button id="themeToggle" type="button" class="toggle">
         <span id="themeIcon" aria-hidden="true">🌙</span>
         <span id="themeText" class="text-sm">Dark</span>
-      </button>
-      <div class="flex items-center space-x-2">
-              {{-- === MEMANGGIL LANGUAGE SWITCHER ANDA YANG SUDAH ADA === --}}
-                @livewire('language-switcher')
-              {{-- === MEMANGGIL LANGUAGE SWITCHER ANDA YANG SUDAH ADA === --}}
-        </div>
+      </button> --}}
+
+      <div class="hidden md:flex items-center">
+        @livewire('language-switcher')
+      </div>
     </div>
   </div>
+
+  <!-- Mobile Drawer -->
+  <div id="mobileNav" class="lg:hidden border-t" style="border-color:var(--border)" hidden>
+    <nav class="max-w-7xl mx-auto px-4 py-3">
+      <div class="flex flex-col gap-2">
+        <a href="#dashboard" class="nav-link py-2">{{ __('Dashboard') }}</a>
+        <a href="#about" class="nav-link py-2">{{ __('About Me') }}</a>
+        <a href="#credit" class="nav-link py-2">{{ __('Credit') }}</a>
+        <a href="#guidebook" class="nav-link py-2">{{ __('Guidebook') }}</a>
+        <a href="#metodologi" class="nav-link py-2">{{ __('Metodologi') }}</a>
+      </div>
+
+      <div class="mt-3 pt-3 border-t flex items-center gap-2"
+           style="border-color:var(--border)">
+        @auth('user')
+          <a href="{{ url('/user') }}" class="btn-dark px-3 py-2 rounded-lg flex-1 text-center">Dashboard User</a>
+        @elseif(Auth::guard('admin')->check())
+          <a href="{{ url('/admin') }}" class="btn-dark px-3 py-2 rounded-lg flex-1 text-center">Dashboard Admin</a>
+        @else
+          <a href="{{ url('/login') }}" class="px-3 py-2 rounded-lg flex-1 text-center" style="border:1px solid var(--border); background:var(--bg-page); color:var(--text)">Login</a>
+          <a href="{{ url('/register') }}" class="cta px-3 py-2 rounded-lg flex-1 text-center">{{ __('Daftar Gratis') }}</a>
+        @endauth
+      </div>
+
+      <div class="mt-3">
+        @livewire('language-switcher')
+      </div>
+    </nav>
+  </div>
 </header>
+
 
 <main class="max-w-7xl mx-auto px-4">
   {{-- =================== HERO / DASHBOARD =================== --}}
@@ -385,6 +438,14 @@
       <div>
         <h4 class="text-sm font-bold mb-3" style="color:var(--text-strong)">{{ __('Aksi Cepat') }}</h4>
         <div class="flex flex-col gap-2">
+            <div class="mt-4">
+            {{-- <h4 class="text-sm font-bold mb-2" style="color:var(--text-strong)">{{ __('Tema') }}</h4> --}}
+            <button id="themeToggle" type="button" class="toggle">
+                <span id="themeIcon" aria-hidden="true">🌙</span>
+                <span id="themeText" class="text-sm">Dark</span>
+            </button>
+            </div>
+
           <a href="{{ url('/register') }}" class="cta px-4 py-2 rounded-lg text-sm font-semibold text-center">{{ __('Buat Akun') }}</a>
           <a href="{{ url('/login') }}" class="px-4 py-2 rounded-lg text-sm font-semibold text-center" style="border:1px solid var(--border); background:var(--bg-page); color:var(--text)">{{ __('Masuk') }}</a>
         </div>
@@ -398,6 +459,7 @@
 </footer>
 
 {{-- =================== Scripts =================== --}}
+
 <script>
   // Init libraries
   document.addEventListener('DOMContentLoaded', () => {
@@ -429,7 +491,35 @@
     });
   })();
 
-  // Highlight active nav on scroll
+  // Mobile menu toggle
+  (function(){
+    const btn = document.getElementById('mobileMenuBtn');
+    const panel = document.getElementById('mobileNav');
+    if(!btn || !panel) return;
+
+    const setIcon = (open) => {
+      btn.innerHTML = open ? '<i data-feather="x" aria-hidden="true"></i>' : '<i data-feather="menu" aria-hidden="true"></i>';
+      feather.replace({ 'stroke-width': 1.5 });
+      btn.setAttribute('aria-expanded', open.toString());
+    };
+
+    const openMenu  = () => { panel.hidden = false; setIcon(true); };
+    const closeMenu = () => { panel.hidden = true; setIcon(false); };
+
+    btn.addEventListener('click', () => panel.hidden ? openMenu() : closeMenu());
+
+    // tutup saat klik link di drawer
+    panel.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', () => closeMenu());
+    });
+
+    // tutup saat esc
+    document.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape' && !panel.hidden) closeMenu();
+    });
+  })();
+
+  // Highlight active nav on scroll (tetap, sedikit diperkuat)
   document.addEventListener('DOMContentLoaded', () => {
     const sections = document.querySelectorAll('section[id]');
     const links = document.querySelectorAll('#main-nav .nav-link');
@@ -447,6 +537,26 @@
 
     sections.forEach(s => io.observe(s));
   });
+
+//   // Highlight active nav on scroll
+//   document.addEventListener('DOMContentLoaded', () => {
+//     const sections = document.querySelectorAll('section[id]');
+//     const links = document.querySelectorAll('#main-nav .nav-link');
+//     if (!sections.length || !links.length) return;
+
+//     const io = new IntersectionObserver(entries => {
+//       entries.forEach(entry => {
+//         if (entry.isIntersecting) {
+//           links.forEach(a => a.classList.remove('nav-link-active'));
+//           const active = document.querySelector(`#main-nav a[href="#${entry.target.id}"]`);
+//           active && active.classList.add('nav-link-active');
+//         }
+//       });
+//     }, { rootMargin: '-50% 0px -40% 0px', threshold: 0 });
+
+//     sections.forEach(s => io.observe(s));
+//   });
 </script>
+
 </body>
 </html>
