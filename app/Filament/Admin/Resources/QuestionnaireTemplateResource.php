@@ -24,7 +24,22 @@ class QuestionnaireTemplateResource extends Resource
     protected static ?string $model = QuestionnaireTemplate::class;
     protected static ?string $navigationIcon = 'heroicon-o-document-duplicate';
 
+    public static function getNavigationGroup(): ?string
+        {
+            return __('Survey Management');
+        }
 
+        // Judul Halaman (title)
+        public static function getPluralModelLabel(): string
+        {
+            return __('Template Survei Kuisioner');
+        }
+
+        // Label Navigasi (sidebar)
+        public static function getNavigationLabel(): string
+        {
+            return __('Template Survei Kuisioner');
+        }
     /**
      * [FIX] Menambahkan method untuk mengontrol visibilitas tombol "Create".
      */
@@ -39,17 +54,17 @@ class QuestionnaireTemplateResource extends Resource
         return $form
             ->schema([
                 // Schema form Anda sudah benar, tidak perlu diubah.
-                Forms\Components\Section::make('Informasi Dasar')
+                Forms\Components\Section::make(__('Informasi Dasar'))
                     ->schema([
-                        Forms\Components\TextInput::make('title')->label('Judul Template')->required(),
-                        Forms\Components\Textarea::make('description')->label('Deskripsi'),
+                        Forms\Components\TextInput::make('title')->label(__('Judul Template'))->required(),
+                        Forms\Components\Textarea::make('description')->label(__('Deskripsi')),
                     ])->collapsible(),
 
-                Forms\Components\Section::make('Pertanyaan Demografi')
+                Forms\Components\Section::make(__('Pertanyaan Demografi'))
                      ->schema([
-                        Forms\Components\TextInput::make('demographic_title')->label('Judul Bagian Demografi')->required()->default('Demographic Data'),
+                        Forms\Components\TextInput::make('demographic_title')->label(__('Judul Bagian Demografi'))->required()->default('Demographic Data'),
                         Forms\Components\Repeater::make('demographic_questions')
-                            ->label('Daftar Pertanyaan Demografi')
+                            ->label(__('Daftar Pertanyaan Demografi'))
                             // Label item dinamis berbasis UID
                             ->itemLabel(function (array $state, Forms\Get $get): ?string {
                                 $uids  = collect($get('demographic_questions') ?? [])->pluck('_uid');
@@ -68,28 +83,28 @@ class QuestionnaireTemplateResource extends Resource
                                         }
                                     }),
 
-                                Forms\Components\Textarea::make('question_text')->label('Isi Pertanyaan')->required(),
-                                Forms\Components\Select::make('type')->label('Tipe Pertanyaan')
+                                Forms\Components\Textarea::make('question_text')->label(__('Isi Pertanyaan'))->required(),
+                                Forms\Components\Select::make('type')->label(__('Tipe Pertanyaan'))
                                     ->options(['isian' => 'Isian Singkat', 'dropdown' => 'Dropdown'])
                                     ->required()->live(),
-                                Forms\Components\TagsInput::make('options')->label('Pilihan Jawaban (untuk Dropdown)')
-                                    ->helperText('Tekan Enter setelah mengetik satu pilihan.')
+                                Forms\Components\TagsInput::make('options')->label(__('Pilihan Jawaban (untuk Dropdown)'))
+                                    ->helperText(__('Tekan Enter setelah mengetik satu pilihan.'))
                                     ->visible(fn ($get) => $get('type') === 'dropdown'),
                             ])
-                            ->addActionLabel('Tambah Pertanyaan Demografi')
+                            ->addActionLabel(__('Tambah Pertanyaan Demografi'))
                             ->defaultItems(1),
 
                     ])->collapsible(),
 
-                Forms\Components\Section::make('Item Statement (Skala Likert)')
+                Forms\Components\Section::make(__('Item Statement (Skala Likert)'))
                     ->schema([
-                        Forms\Components\TextInput::make('likert_title')->label('Judul Bagian Skala Likert')->required()->default('Item Statements'),
+                        Forms\Components\TextInput::make('likert_title')->label(__('Judul Bagian Skala Likert'))->required()->default(__('Item Statements')),
                         Forms\Components\Repeater::make('likert_questions')
-                            ->label('Daftar Pernyataan Skala Likert')
+                            ->label(__('Daftar Pernyataan Skala Likert'))
                             ->itemLabel(function (array $state, Forms\Get $get): ?string {
                                 $uids  = collect($get('likert_questions') ?? [])->pluck('_uid');
                                 $index = $uids->search($state['_uid'] ?? null, true);
-                                return 'Pernyataan #' . (($index === false ? 0 : $index) + 1);
+                                return (__('Pertanyaan #')) . (($index === false ? 0 : $index) + 1);
                             })
                             ->reorderable()
                             ->schema([
@@ -102,17 +117,20 @@ class QuestionnaireTemplateResource extends Resource
                                         }
                                     }),
 
-                                Forms\Components\Textarea::make('question_text')->label('Isi Pernyataan')->required(),
-                                Forms\Components\Select::make('likert_scale')->label('Skala Likert')
+                                Forms\Components\Textarea::make('question_text')->label(__('Isi Pertanyaan'))->required(),
+                                Forms\Components\Select::make('likert_scale')->label(__('Skala Likert'))
                                     ->options([
-                                        '3' => 'Skala 1-3', '4' => 'Skala 1-4', '5' => 'Skala 1-5',
-                                        '6' => 'Skala 1-6', '7' => 'Skala 1-7',
+                                        '3' => __('Skala 1-3'), 
+                                        '4' => __('Skala 1-4'), 
+                                        '5' => __('Skala 1-5'),
+                                        '6' => __('Skala 1-6'), 
+                                        '7' => __('Skala 1-7'),
                                     ])->required()->default('5'),
-                                Forms\Components\Radio::make('manner')->label('Arah Pernyataan (Manner)')
-                                    ->options(['positive' => 'Positif', 'negative' => 'Negatif'])
+                                Forms\Components\Radio::make('manner')->label(__('Arah Pertanyaan (Manner)'))
+                                    ->options([__('Positif'), __('Negatif')])
                                     ->required()->default('positive'),
                             ])
-                            ->addActionLabel('Tambah Pernyataan')
+                            ->addActionLabel(__('Tambah Pertanyaan'))
                             ->defaultItems(1),
                     ])->collapsible(),
             ]);
@@ -122,11 +140,11 @@ class QuestionnaireTemplateResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('title')->label('Judul Template')->searchable()->sortable(),
+                TextColumn::make('title')->label(__('Judul Template'))->searchable()->sortable(),
 
                 // --- [BAGIAN YANG DIPERBARUI] ---
                 TextColumn::make('pembuat') // Beri nama custom agar tidak bentrok dengan relasi
-                    ->label('Pembuat')
+                    ->label(__('Pembuat'))
                     ->getStateUsing(function (QuestionnaireTemplate $record): string {
                         // Jika user_id ada, tampilkan nama user dari relasi.
                         // Jika tidak ada, tampilkan teks "Admin".
@@ -145,17 +163,17 @@ class QuestionnaireTemplateResource extends Resource
                     })
                     ->visible(fn () => Auth::guard('admin')->check()),
                 // --- [AKHIR BAGIAN YANG DIPERBARUI] ---
-                TextColumn::make('total_questions')->label('Jumlah Pertanyaan')
+                TextColumn::make('total_questions')->label(__('Jumlah Pertanyaan'))
                     ->getStateUsing(fn (QuestionnaireTemplate $record): int =>
                         count($record->demographic_questions ?? []) + count($record->likert_questions ?? [])
                     )
                     ->sortable(),
                 BadgeColumn::make('published_at')
-                    ->label('Status')
-                    ->getStateUsing(fn (QuestionnaireTemplate $record): string => $record->published_at ? 'Published' : 'Draft')
-                    ->colors(['success' => 'Published', 'warning' => 'Draft']),
+                    ->label(__('Status'))
+                    ->getStateUsing(fn (QuestionnaireTemplate $record): string => $record->published_at ? __('Published') : __('Draft'))
+                    ->colors(['success' => __('Published'), 'warning' => __('Draft')]),
 
-                TextColumn::make('published_at')->label('Tgl. Publikasi')->dateTime('d M Y')->sortable(),
+                TextColumn::make('published_at')->label(__('Tgl. Publikasi'))->dateTime('d M Y')->sortable(),
             ])
             ->actions([
                 EditAction::make()

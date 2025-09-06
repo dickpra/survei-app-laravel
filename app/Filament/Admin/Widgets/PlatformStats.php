@@ -13,16 +13,16 @@ class PlatformStats extends BaseWidget
     protected function getStats(): array
     {
         return [
-            Stat::make('Total Pengguna Terdaftar', User::count())
-                ->description('Jumlah semua pengguna yang membuat survei')
+            Stat::make(__('Total Pengguna Terdaftar'), User::count())
+                ->description(__('Jumlah semua pengguna yang membuat survei'))
                 ->descriptionIcon('heroicon-m-users')
                 ->color('success'),
-            Stat::make('Total Survei Dibuat', Survey::count())
-                ->description('Jumlah semua survei di platform')
+            Stat::make(__('Total Survei Dibuat'), Survey::count())
+                ->description(__('Jumlah semua survei di platform'))
                 ->descriptionIcon('heroicon-m-clipboard-document-list')
                 ->color('info'),
-            Stat::make('Total Jawaban Terkumpul', Response::count())
-                ->description('Jumlah semua responden yang telah mengisi')
+            Stat::make(__('Total Jawaban Terkumpul'), Response::count())
+                ->description(__('Jumlah semua responden yang telah mengisi'))
                 ->descriptionIcon('heroicon-m-pencil-square')
                 ->color('warning'),
         ];

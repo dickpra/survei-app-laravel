@@ -125,11 +125,11 @@
     {{-- CENTER NAV --}}
     <nav id="main-nav" class="flex-1 flex justify-center">
       <div class="flex items-center gap-5 text-sm">
-        <a href="#dashboard" class="nav-link">Dashboard</a>
-        <a href="#about" class="nav-link">About Me</a>
-        <a href="#credit" class="nav-link">Credit</a>
-        <a href="#guidebook" class="nav-link">Guidebook</a>
-        <a href="#metodologi" class="nav-link">Metodologi</a>
+        <a href="#dashboard" class="nav-link">{{ __('Dashboard') }}</a>
+        <a href="#about" class="nav-link">{{ __('About Me') }}</a>
+        <a href="#credit" class="nav-link">{{ __('Credit') }}</a>
+        <a href="#guidebook" class="nav-link">{{ __('Guidebook') }}</a>
+        <a href="#metodologi" class="nav-link">{{ __('Metodologi') }}</a>
       </div>
     </nav>
 
@@ -141,13 +141,18 @@
         <a href="{{ url('/admin') }}" class="btn-dark px-3 py-2 rounded-lg">Dashboard Admin</a>
       @else
         <a href="{{ url('/login') }}" class="px-3 py-2 rounded-lg" style="color:var(--text)">Login</a>
-        <a href="{{ url('/register') }}" class="btn-light px-3 py-2 rounded-lg">Daftar Gratis</a>
+        <a href="{{ url('/register') }}" class="btn-light px-3 py-2 rounded-lg">{{ __('Daftar Gratis') }}</a>
       @endauth
 
       <button id="themeToggle" type="button" class="toggle">
         <span id="themeIcon" aria-hidden="true">🌙</span>
         <span id="themeText" class="text-sm">Dark</span>
       </button>
+      <div class="flex items-center space-x-2">
+              {{-- === MEMANGGIL LANGUAGE SWITCHER ANDA YANG SUDAH ADA === --}}
+                @livewire('language-switcher')
+              {{-- === MEMANGGIL LANGUAGE SWITCHER ANDA YANG SUDAH ADA === --}}
+        </div>
     </div>
   </div>
 </header>
@@ -163,7 +168,7 @@
         {{ $settings?->hero_subtitle ?? 'Buat, sebarkan, dan analisis survei dengan mudah. Dapatkan wawasan berharga dari responden Anda.' }}
       </p>
       <div class="mt-6">
-        <a href="{{ url('/register') }}" class="cta inline-block px-6 py-3 rounded-lg font-bold">Mulai Sekarang →</a>
+        <a href="{{ url('/register') }}" class="cta inline-block px-6 py-3 rounded-lg font-bold">{{ __('Mulai Sekarang') }} →</a>
       </div>
     </div>
 
@@ -174,13 +179,13 @@
           <label class="sr-only" for="search">Cari Survei</label>
           <input
             type="search" id="search" name="search" value="{{ request('search') }}"
-            placeholder="Ketik judul survei…"
+            placeholder="{{ __('Ketik judul survei...') }}"
             class="input w-full rounded-l-xl"
           >
-          <button type="submit" class="px-6 rounded-r-xl text-sm font-semibold cta border-l-0">Cari</button>
+          <button type="submit" class="px-6 rounded-r-xl text-sm font-semibold cta border-l-0">{{ __('Cari') }}</button>
         </div>
         <div>
-          <label class="sr-only" for="template_id">Filter Kuesioner</label>
+          <label class="sr-only" for="template_id">{{ __('Filter Kuesioner') }}</label>
           <select
             id="template_id" name="template_id"
             class="select w-full rounded-xl"
@@ -199,54 +204,54 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
       <div class="card p-5 text-center" data-aos="fade-up" data-aos-delay="150">
         <div class="text-2xl md:text-3xl font-extrabold" style="color:var(--primary)">{{ number_format($templates->count()) }}</div>
-        <div class="text-sm md:text-base" style="color:var(--text-muted)">Template Tersedia</div>
+        <div class="text-sm md:text-base" style="color:var(--text-muted)">{{ __('Template Tersedia') }}</div>
       </div>
       <div class="card p-5 text-center" data-aos="fade-up" data-aos-delay="200">
         <div class="text-2xl md:text-3xl font-extrabold" style="color:var(--primary)">{{ number_format($surveys->total()) }}</div>
-        <div class="text-sm md:text-base" style="color:var(--text-muted)">Survei Dipublikasi</div>
+        <div class="text-sm md:text-base" style="color:var(--text-muted)">{{ __('Survei Dipublikasi') }}</div>
       </div>
       <div class="card p-5 text-center" data-aos="fade-up" data-aos-delay="250">
         <div class="text-2xl md:text-3xl font-extrabold" style="color:var(--primary)">
           {{ number_format(\App\Models\Survey::where('is_public', true)->withCount('responses')->get()->sum('responses_count')) }}
         </div>
-        <div class="text-sm md:text-base" style="color:var(--text-muted)">Jawaban Terkumpul</div>
+        <div class="text-sm md:text-base" style="color:var(--text-muted)">{{ __('Jawaban Terkumpul') }}</div>
       </div>
     </div>
 
     {{-- Grid Survei --}}
     <div class="mt-8">
       <div class="flex items-end justify-between gap-3 mb-3">
-        <h2 class="text-xl md:text-2xl font-extrabold title-underline" style="color:var(--text-strong)">Hasil Survei Publik</h2>
+        <h2 class="text-xl md:text-2xl font-extrabold title-underline" style="color:var(--text-strong)">{{ __('Hasil Survei Publik') }}</h2>
         <span class="chip text-sm">
           <i data-feather="layers" aria-hidden="true"></i>
           {{ number_format($surveys->total()) }} survei
         </span>
       </div>
-      <p class="mb-6" style="color:var(--text-muted)">Gunakan filter di atas untuk mempersempit hasil.</p>
+      <p class="mb-6" style="color:var(--text-muted)">{{ __('Gunakan filter di atas untuk mempersempit hasil.') }}</p>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @forelse ($surveys as $survey)
           <article class="card p-6 hover:shadow-xl transition-shadow duration-300 flex flex-col" data-aos="fade-up">
             <h3 class="text-lg md:text-xl font-bold" style="color:var(--text-strong)">{{ $survey->title }}</h3>
-            <p class="text-sm mt-2" style="color:var(--text-muted)">Dipublikasikan pada: {{ $survey->created_at->format('d M Y') }}</p>
+            <p class="text-sm mt-2" style="color:var(--text-muted)">{{ __('Dipublikasikan pada:') }} {{ $survey->created_at->format('d M Y') }}</p>
             <div class="mt-4 pt-4 border-t" style="border-color:var(--border)">
               <div class="flex items-center justify-between">
                 <div class="text-center">
                   <span class="text-2xl font-extrabold" style="color:var(--primary)">{{ number_format($survey->responses_count) }}</span>
-                  <span class="block text-sm" style="color:var(--text-muted)">Responden</span>
+                  <span class="block text-sm" style="color:var(--text-muted)">{{ __('Responden') }}</span>
                 </div>
                 <a href="{{ route('public.survey.results', $survey) }}"
                    class="inline-block px-4 py-2 rounded-lg text-sm font-semibold"
                    style="background:var(--primary-100); color:var(--primary)">
-                  Lihat Detail &rarr;
+                  {{ __('Lihat Detail') }} &rarr;
                 </a>
               </div>
             </div>
           </article>
         @empty
           <div class="col-span-full card p-10 text-center">
-            <p style="color:var(--text-muted)" class="text-lg">Tidak ada hasil survei yang cocok.</p>
-            <a href="{{ route('home') }}" style="color:var(--primary)" class="mt-2 inline-block font-semibold hover:underline">Tampilkan semua survei</a>
+            <p style="color:var(--text-muted)" class="text-lg">{{ __('Tidak ada hasil survei yang cocok.') }}</p>
+            <a href="{{ route('home') }}" style="color:var(--primary)" class="mt-2 inline-block font-semibold hover:underline">{{ __('Tampilkan semua survei') }}</a>
           </div>
         @endforelse
       </div>
@@ -268,35 +273,35 @@
           @endforeach
         </div>
       @else
-        <p style="color:var(--text-muted)">Belum ada konten.</p>
+        <p style="color:var(--text-muted)">{{ __('Belum ada konten.') }}</p>
       @endif
     </div>
   </section>
 
   {{-- =================== CREDIT =================== --}}
   <section id="credit" class="mt-10" data-aos="fade-up">
-    <h2 class="text-2xl md:text-3xl font-extrabold title-underline" style="color:var(--text-strong)">Credit</h2>
+    <h2 class="text-2xl md:text-3xl font-extrabold title-underline" style="color:var(--text-strong)">{{ __('Credit') }}</h2>
     <div class="card mt-4 p-6">
       @if(is_array($settings?->credit) && count($settings->credit))
         <div class="space-y-6">
           @foreach($settings->credit as $block)
-            @include('public.partials._builder-block', ['block' => $block])
+            @include('partials._builder-block', ['block' => $block])
           @endforeach
         </div>
       @else
-        <p style="color:var(--text-muted)">Belum ada konten.</p>
+        <p style="color:var(--text-muted)">{{ __('Belum ada konten.') }}</p>
       @endif
     </div>
   </section>
 
   {{-- =================== GUIDEBOOK =================== --}}
   <section id="guidebook" class="mt-10" data-aos="fade-up">
-    <h2 class="text-2xl md:text-3xl font-extrabold title-underline" style="color:var(--text-strong)">Guidebook</h2>
+    <h2 class="text-2xl md:text-3xl font-extrabold title-underline" style="color:var(--text-strong)">{{ __('Guidebook') }}</h2>
     <div class="card mt-4 p-6">
       @if(is_array($settings?->guidebook) && count($settings->guidebook))
         <div class="space-y-6">
           @foreach($settings->guidebook as $block)
-            @include('public.partials._builder-block', ['block' => $block])
+            @include('partials._builder-block', ['block' => $block])
           @endforeach
         </div>
       @else
@@ -307,16 +312,16 @@
 
   {{-- =================== METODOLOGI =================== --}}
   <section id="metodologi" class="mt-10 mb-14" data-aos="fade-up">
-    <h2 class="text-2xl md:text-3xl font-extrabold title-underline" style="color:var(--text-strong)">Metodologi</h2>
+    <h2 class="text-2xl md:text-3xl font-extrabold title-underline" style="color:var(--text-strong)">{{ __('Metodologi') }}</h2>
     <div class="card mt-4 p-6">
       @if(is_array($settings?->metodologi) && count($settings->metodologi))
         <div class="space-y-6">
           @foreach($settings->metodologi as $block)
-            @include('public.partials._builder-block', ['block' => $block])
+            @include('partials._builder-block', ['block' => $block])
           @endforeach
         </div>
       @else
-        <p style="color:var(--text-muted)">Belum ada konten.</p>
+        <p style="color:var(--text-muted)">{{ __('Belum ada konten.') }}</p>
       @endif
     </div>
   </section>
@@ -333,22 +338,22 @@
             {{-- <span class="text-xl font-bold text-primary-700 dark:text-accent-500">UMIX</span> --}}
     </div>
         <p class="text-sm" style="color:var(--text-muted)">
-Rancang instrumen penelitian secara sistematis. Analisis data yang dihasilkan untuk memperoleh wawasan mendalam dan mendukung pengambilan keputusan yang berbasis bukti.        </p>
+            {{ __('Rancang instrumen penelitian secara sistematis. Analisis data yang dihasilkan untuk memperoleh wawasan mendalam dan mendukung pengambilan keputusan yang berbasis bukti.') }}
       </div>
 
       <div>
-        <h4 class="text-sm font-bold mb-3" style="color:var(--text-strong)">Navigasi</h4>
+        <h4 class="text-sm font-bold mb-3" style="color:var(--text-strong)">{{ __('Navigasi') }}</h4>
         <ul class="space-y-2 text-sm">
-          <li><a href="#dashboard" style="color:var(--text-muted)" class="hover:underline">Dashboard</a></li>
-          <li><a href="#about" style="color:var(--text-muted)" class="hover:underline">About Me</a></li>
-          <li><a href="#credit" style="color:var(--text-muted)" class="hover:underline">Credit</a></li>
-          <li><a href="#guidebook" style="color:var(--text-muted)" class="hover:underline">Guidebook</a></li>
-          <li><a href="#metodologi" style="color:var(--text-muted)" class="hover:underline">Metodologi</a></li>
+          <li><a href="#dashboard" style="color:var(--text-muted)" class="hover:underline">{{ __('Dashboard') }}</a></li>
+          <li><a href="#about" style="color:var(--text-muted)" class="hover:underline">{{ __('About Me') }}</a></li>
+          <li><a href="#credit" style="color:var(--text-muted)" class="hover:underline">{{ __('Credit') }}</a></li>
+          <li><a href="#guidebook" style="color:var(--text-muted)" class="hover:underline">{{ __('Guidebook') }}</a></li>
+          <li><a href="#metodologi" style="color:var(--text-muted)" class="hover:underline">{{ __('Metodologi') }}</a></li>
         </ul>
       </div>
 
       <div>
-        <h4 class="text-sm font-bold mb-3" style="color:var(--text-strong)">Kontak</h4>
+        <h4 class="text-sm font-bold mb-3" style="color:var(--text-strong)">{{ __('Kontak') }}</h4>
             <ul class="space-y-2 text-sm" style="color:var(--text-muted)">
                 @if($settings?->contact_email)
                     <li class="flex items-center gap-2">
@@ -378,10 +383,10 @@ Rancang instrumen penelitian secara sistematis. Analisis data yang dihasilkan un
       </div>
 
       <div>
-        <h4 class="text-sm font-bold mb-3" style="color:var(--text-strong)">Aksi Cepat</h4>
+        <h4 class="text-sm font-bold mb-3" style="color:var(--text-strong)">{{ __('Aksi Cepat') }}</h4>
         <div class="flex flex-col gap-2">
-          <a href="{{ url('/register') }}" class="cta px-4 py-2 rounded-lg text-sm font-semibold text-center">Buat Akun</a>
-          <a href="{{ url('/login') }}" class="px-4 py-2 rounded-lg text-sm font-semibold text-center" style="border:1px solid var(--border); background:var(--bg-page); color:var(--text)">Masuk</a>
+          <a href="{{ url('/register') }}" class="cta px-4 py-2 rounded-lg text-sm font-semibold text-center">{{ __('Buat Akun') }}</a>
+          <a href="{{ url('/login') }}" class="px-4 py-2 rounded-lg text-sm font-semibold text-center" style="border:1px solid var(--border); background:var(--bg-page); color:var(--text)">{{ __('Masuk') }}</a>
         </div>
       </div>
     </div>

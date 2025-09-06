@@ -39,8 +39,8 @@ class Register extends BaseRegister
         event(new Registered($user));
 
         Notification::make()
-            ->title('Registrasi Berhasil!')
-            ->body('Akun Anda telah dibuat dan sedang menunggu persetujuan dari Admin.')
+            ->title(__('Registrasi Berhasil!'))
+            ->body(__('Akun Anda telah dibuat dan sedang menunggu persetujuan dari Admin.'))
             ->success()
             ->persistent()
             ->send();

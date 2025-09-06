@@ -15,6 +15,13 @@ class RecentSurveys extends BaseWidget
     protected static ?int $sort = 2; // Atur urutan widget, 2 berarti di bawah stats overview
 
     protected int | string | array $columnSpan = 'full'; // Agar widget ini memakai lebar penuh
+    
+    public static function canView(): bool
+{
+    $u = Auth::user();
+    return $u && (bool) $u->is_researcher;
+}
+
 
     public function table(Table $table): Table
     {
@@ -25,17 +32,17 @@ class RecentSurveys extends BaseWidget
             )
             ->columns([
                 Tables\Columns\TextColumn::make('title')
-                    ->label('Judul Survei'),
+                    ->label(__('Judul Survei')),
                 Tables\Columns\TextColumn::make('responses_count')
                     ->counts('responses')
-                    ->label('Jumlah Responden'),
+                    ->label(__('Jumlah Responden')),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Dibuat Pada')
+                    ->label(__('Dibuat Pada'))
                     ->since(),
             ])
             ->actions([
                 // PERBAIKAN ADA DI BARIS '->url' DI BAWAH INI
-                Tables\Actions\Action::make('Lihat Hasil')
+                Tables\Actions\Action::make(__('Lihat Hasil'))
                     ->icon('heroicon-o-chart-bar')
                     ->url(fn (Survey $record): string => SurveyResource::getUrl('view-survey-results', ['record' => $record])),
             ]);

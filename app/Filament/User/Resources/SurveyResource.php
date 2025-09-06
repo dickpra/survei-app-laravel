@@ -29,7 +29,28 @@ class SurveyResource extends Resource
 {
     protected static ?string $model = Survey::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?string $navigationGroup = 'Researcher';
+    // protected static ?string $navigationGroup = 'Researcher';
+
+
+
+
+    public static function getNavigationGroup(): ?string
+        {
+            return __('Peneliti');
+        }
+
+        // Judul Halaman (title)
+        public static function getPluralModelLabel(): string
+        {
+            return __('Survei');
+        }
+
+        // Label Navigasi (sidebar)
+        public static function getNavigationLabel(): string
+        {
+            return __('Survei');
+        }
+
 
     public static function canViewAny(): bool
     {
@@ -47,7 +68,7 @@ class SurveyResource extends Resource
         return $form
             ->schema([
                 Select::make('questionnaire_template_id')
-                    ->label('Pilih Template Kuesioner')
+                    ->label(__('Pilih Template Kuesioner'))
                     ->options(
                         QuestionnaireTemplate::whereNotNull('published_at')->pluck('title', 'id')
                     )
@@ -56,10 +77,10 @@ class SurveyResource extends Resource
                     ->required()
                     ->suffixAction(
                         Action::make('preview')
-                            ->label('Preview')
+                            ->label(__('Pratinjau'))
                             ->icon('heroicon-o-eye')
                             ->modalSubmitAction(false)
-                            ->modalCancelActionLabel('Tutup')
+                            ->modalCancelActionLabel(__('Tutup'))
                             ->modalHeading(fn (Get $get) => QuestionnaireTemplate::find($get('questionnaire_template_id'))?->title)
                             ->modalContent(function (Get $get): ?\Illuminate\View\View {
                                 $templateId = $get('questionnaire_template_id');
@@ -73,14 +94,14 @@ class SurveyResource extends Resource
                             ->visible(fn (Get $get) => filled($get('questionnaire_template_id'))),
                     ),
                 Forms\Components\TextInput::make('title')
-                    ->label('Judul Survei Anda')
-                    ->helperText('Beri nama yang spesifik untuk survei Anda.')
+                    ->label(__('Judul Survei Anda'))
+                    ->helperText(__('Beri nama yang spesifik untuk survei Anda.'))
                     ->required()
                     ->maxLength(255),
                 
                 Forms\Components\Toggle::make('enforce_single_submission')
-                    ->label('Hanya Boleh Diisi Sekali per Responden')
-                    ->helperText('Jika aktif, responden akan dibatasi via cookie & IP address.')
+                    ->label(__('Hanya Boleh Diisi Sekali per Responden'))
+                    ->helperText(__('Jika aktif, responden akan dibatasi via cookie & IP address.'))
                     ->default(true),
             ]);
     }
@@ -103,11 +124,11 @@ class SurveyResource extends Resource
             )
             ->columns([
                 Tables\Columns\TextColumn::make('title')
-                    ->label('Judul Survei')
+                    ->label(__('Judul Survei'))
                     ->searchable()
                     ->wrap(),
                 Tables\Columns\TextColumn::make('unique_code')
-                    ->label('Kode Unik (Bagikan ini)')
+                    ->label(__('Kode Unik (Bagikan ini)'))
                     ->copyable()
                     // ->copyableState(fn (string $state): string => route('survey.show', ['unique_code' => $state]))
                     ->copyableState(function (Survey $record): string {
@@ -122,17 +143,17 @@ class SurveyResource extends Resource
                         // Jika tidak, gunakan route standar yang lama sebagai fallback
                         return route('survey.show', ['unique_code' => $record->unique_code]);
                     })
-                    ->copyMessage('Link survei berhasil disalin!')
+                    ->copyMessage(__('Link survei berhasil disalin!'))
                     ->badge(),
                 Tables\Columns\TextColumn::make('questionnaireTemplate.title')
-                    ->label('Template')
+                    ->label(__('Template'))
                     ->badge()
                     ->color('info'),
                 Tables\Columns\TextColumn::make('responses_count')
                     ->counts('responses')
-                    ->label('Jumlah Responden'),
+                    ->label(__('Jumlah Responden')),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Dibuat Pada')
+                    ->label(__('Dibuat Pada'))
                     ->dateTime('d M Y')
                     ->sortable(),
                     
@@ -146,7 +167,7 @@ class SurveyResource extends Resource
             // ])
              ->actions([
                 // PERBAIKAN ADA DI BARIS INI:
-                Tables\Actions\Action::make('Lihat Hasil')
+                Tables\Actions\Action::make(__('Lihat Hasil'))
                     ->icon('heroicon-o-chart-bar')
                     ->url(fn (Survey $record): string => static::getUrl('view-survey-results', ['record' => $record])),
 

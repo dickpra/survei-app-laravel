@@ -9,9 +9,12 @@ use Flowframe\Trend\TrendValue;
 
 class SurveysByMonthChart extends ChartWidget
 {
-    protected static ?string $heading = 'Survei Dibuat per Bulan';
-
     protected static string $color = 'info';
+
+    public function getHeading(): string
+    {
+        return __('Survei Dibuat per Bulan');
+    }
 
     protected function getData(): array
     {
@@ -27,7 +30,7 @@ class SurveysByMonthChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Survei Dibuat',
+                    'label' => __('Survei Dibuat'),
                     'data' => $data->map(fn (TrendValue $value) => $value->aggregate),
                 ],
             ],
@@ -37,6 +40,6 @@ class SurveysByMonthChart extends ChartWidget
 
     protected function getType(): string
     {
-        return 'line'; // Kita gunakan grafik garis untuk melihat tren
+        return 'line'; // Grafik garis
     }
 }

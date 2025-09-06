@@ -58,43 +58,43 @@ class ManageDashboardSettings extends Page implements HasForms
     {
         return $form
             ->schema([
-                Section::make('Hero/Dashboard Utama')->schema([
-                    TextInput::make('hero_title')->label('Judul Utama'),
-                    Textarea::make('hero_subtitle')->label('Subjudul/Deskripsi'),
+                Section::make(__('Hero/Dashboard Utama'))->schema([
+                    TextInput::make('hero_title')->label(__('Judul Utama')),
+                    Textarea::make('hero_subtitle')->label(__('Subjudul/Deskripsi')),
                 ]),
 
-                Section::make('Konten Halaman')
-                    ->description('Bangun konten halaman Anda dengan menambahkan dan menyusun blok di bawah ini.')
+                Section::make(__('Konten Halaman'))
+                    ->description(__('Bangun konten halaman Anda dengan menambahkan dan menyusun blok di bawah ini.'))
                     ->collapsible()
                     ->schema([
                         // Builder untuk Konten "About Me"
                         Builder::make('about_me')
-                            ->label('Konten About Me')
+                            ->label(__('Konten About Me'))
                             ->blocks($this->getContentBlocks()) // Memanggil metode untuk blok
                             ->columnSpanFull(),
 
                         // Builder untuk Konten "Credit"
                         Builder::make('credit')
-                            ->label('Konten Credit')
+                            ->label(__('Konten Credit'))
                             ->blocks($this->getContentBlocks())
                             ->columnSpanFull(),
                         
                         // Builder untuk Konten "Guidebook"
                         Builder::make('guidebook')
-                            ->label('Konten Guidebook')
+                            ->label(__('Konten Guidebook'))
                             ->blocks($this->getContentBlocks())
                             ->columnSpanFull(),
 
                         // Builder untuk Konten "Metodologi"
                         Builder::make('metodologi')
-                            ->label('Konten Metodologi')
+                            ->label(__('Konten Metodologi'))
                             ->blocks($this->getContentBlocks())
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Kontak (Footer)')->schema([
-                    TextInput::make('contact_email')->label('Email Kontak')->email(),
-                    TextInput::make('contact_phone')->label('Telepon Kontak'),
+                Section::make(__('Kontak (Footer)'))->schema([
+                    TextInput::make('contact_email')->label(__('Email Kontak'))->email(),
+                    TextInput::make('contact_phone')->label(__('Telepon Kontak')),
                 ]),
             ])
             ->statePath('data');
@@ -108,48 +108,48 @@ class ManageDashboardSettings extends Page implements HasForms
     {
         return [
             Builder\Block::make('heading')
-                ->label('Judul')
+                ->label(__('Judul'))
                 ->icon('heroicon-o-bookmark')
                 ->schema([
-                    TextInput::make('content')->label('Teks Judul')->required(),
-                    Select::make('level')->options(['h2' => 'Besar', 'h3' => 'Sedang', 'h4' => 'Kecil'])->default('h2')->required(),
+                    TextInput::make('content')->label(__('Teks Judul'))->required(),
+                    Select::make('level')->options(['h2' => __('Besar'), 'h3' => __('Sedang'), 'h4' => __('Kecil')])->default('h2')->required(),
                 ]),
             Builder\Block::make('paragraph')
-                ->label('Paragraf')
+                ->label(__('Paragraf'))
                 ->icon('heroicon-o-bars-3-bottom-left')
                 ->schema([
-                    RichEditor::make('content')->label('Konten Paragraf')->required(),
+                    RichEditor::make('content')->label(__('Konten Paragraf'))->required(),
                 ]),
             Builder\Block::make('image')
-                ->label('Gambar')
+                ->label(__('Gambar'))
                 ->icon('heroicon-o-photo')
                 ->schema([
-                    FileUpload::make('url')->label('Upload Gambar')->image()->required(),
-                    TextInput::make('alt')->label('Teks Alternatif (untuk SEO)'),
+                    FileUpload::make('url')->label(__('Upload Gambar'))->image()->required(),
+                    TextInput::make('alt')->label(__('Teks Alternatif (untuk SEO)')),
                 ]),
 
                 Builder\Block::make('pdf_document')
-                ->label('Dokumen PDF')
+                ->label(__('Dokumen PDF'))
                 ->icon('heroicon-o-document-text')
                 ->schema([
                     FileUpload::make('url')
-                        ->label('Upload PDF')
+                        ->label(__('Upload PDF'))
                         ->acceptedFileTypes(['application/pdf']) // Hanya izinkan PDF
                         ->required(),
                     TextInput::make('height')
-                        ->label('Tinggi Tampilan (opsional)')
+                        ->label(__('Tinggi Tampilan (opsional)'))
                         ->default('800px')
-                        ->helperText('Contoh: 800px atau 100%'),
+                        ->helperText(__('Contoh: 800px atau 100%')),
                 ]),
             
             // ==== BLOK BARU YANG PINTAR UNTUK SEMUA EMBED ====
             Builder\Block::make('smart_embed')
-                ->label('Embed Cerdas (YouTube, GDrive, Canva)')
+                ->label(__('Embed Cerdas (YouTube, GDrive, Canva)'))
                 ->icon('heroicon-o-link')
                 ->schema([
                     TextInput::make('url')
-                        ->label('URL (YouTube, Google Drive, Canva, dll.)')
-                        ->helperText('Cukup tempelkan link "share" dari layanan yang Anda inginkan. Sistem akan mengubahnya secara otomatis.')
+                        ->label(__('URL (YouTube, Google Drive, Canva, dll.)'))
+                        ->helperText(__('Cukup tempelkan link "share" dari layanan yang Anda inginkan. Sistem akan mengubahnya secara otomatis.'))
                         ->required(),
                 ]),
         ];
@@ -161,7 +161,7 @@ class ManageDashboardSettings extends Page implements HasForms
         $this->settings->update($data);
 
         Notification::make()
-            ->title('Pengaturan berhasil disimpan')
+            ->title(__('Pengaturan berhasil disimpan'))
             ->success()
             ->send();
     }
@@ -170,7 +170,7 @@ class ManageDashboardSettings extends Page implements HasForms
     {
         return [
             Action::make('save')
-                ->label('Simpan Perubahan')
+                ->label(__('Simpan Perubahan'))
                 ->submit('save'),
         ];
     }

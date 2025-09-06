@@ -3,7 +3,7 @@
         {{-- Header ringkas --}}
         <x-filament::card>
             <div class="text-center space-y-1">
-                <h2 class="text-xl font-bold tracking-tight">Hasil untuk: {{ $this->record->title }}</h2>
+                <h2 class="text-xl font-bold tracking-tight">{{ __('Hasil untuk: ') }}{{ $this->record->title }}</h2>
                 <p class="text-gray-500">
                     Total Responden:
                     <span class="font-bold text-primary-600 text-2xl">{{ $totalResponses ?? 0 }}</span>
@@ -71,15 +71,15 @@
                                     <div class="md:col-span-2 space-y-4">
                                         <div class="grid grid-cols-2 gap-3">
                                             <div class="rounded-lg border border-gray-200 p-3">
-                                                <div class="text-xs text-gray-500">Total</div>
+                                                <div class="text-xs text-gray-500">{{ __('Total') }}</div>
                                                 <div class="text-xl font-bold">{{ $total }}</div>
                                             </div>
                                             <div class="rounded-lg border border-gray-200 p-3">
-                                                <div class="text-xs text-gray-500">Opsi Unik</div>
+                                                <div class="text-xs text-gray-500">{{ __('Opsi Unik') }}</div>
                                                 <div class="text-xl font-bold">{{ count($labels) }}</div>
                                             </div>
                                             <div class="rounded-lg border border-gray-200 p-3 col-span-2">
-                                                <div class="text-xs text-gray-500 mb-1">Opsi Teratas</div>
+                                                <div class="text-xs text-gray-500 mb-1">{{ __('Opsi Teratas') }}</div>
                                                 <div class="text-sm">
                                                     @if($topLabel)
                                                         <span class="font-semibold">{{ $topLabel }}</span>
@@ -93,7 +93,7 @@
 
                                         <details class="rounded-lg border border-gray-200 p-3 open:shadow-sm">
                                             <summary class="cursor-pointer list-none flex items-center justify-between">
-                                                <span class="font-medium">Detail Per Opsi</span>
+                                                <span class="font-medium">{{ __('Detail Per Opsi') }}</span>
                                                 <svg class="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                                             </summary>
                                             <ul class="mt-3 space-y-2 text-sm">
@@ -122,12 +122,12 @@
                                     {{-- bar info + search + per-page --}}
                                     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-sm text-gray-600">
                                         <div>
-                                            Menampilkan <span x-text="from"></span>–<span x-text="to"></span>
-                                            dari <span x-text="total"></span> jawaban
+                                            {{ __('Menampilkan') }} <span x-text="from"></span>–<span x-text="to"></span>
+                                            {{ __('dari') }} <span x-text="total"></span> {{ __('jawaban') }}
                                         </div>
                                         <div class="flex items-center gap-3">
                                             <label class="flex items-center gap-2">
-                                                <span class="whitespace-nowrap">Cari</span>
+                                                <span class="whitespace-nowrap">{{ __('Cari') }}</span>
                                                 <input
                                                     type="text"
                                                     placeholder="ketik untuk cari…"
@@ -136,7 +136,7 @@
                                                 >
                                             </label>
                                             <label class="flex items-center gap-2">
-                                                <span class="whitespace-nowrap">Per halaman</span>
+                                                <span class="whitespace-nowrap">{{ __('Per halaman') }}</span>
                                                 <select x-model.number="perPage" class="rounded-md border-gray-300 text-sm">
                                                     <option :value="5">5</option>
                                                     <option :value="10">10</option>
@@ -150,7 +150,7 @@
                                     {{-- list scrollable --}}
                                     <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-md max-h-72 overflow-y-auto">
                                         <template x-if="current.length === 0">
-                                            <div class="text-sm text-gray-500">Tidak ada hasil.</div>
+                                            <div class="text-sm text-gray-500">{{ __('Tidak ada hasil.') }}</div>
                                         </template>
                                         <ul class="list-disc pl-5 text-sm text-gray-700 dark:text-gray-200" x-show="current.length">
                                             <template x-for="(answer, idx) in current" :key="idx">

@@ -27,8 +27,8 @@ class UserStatsOverview extends BaseWidget
 
         // --- Statistik untuk peran INSTRUMENT CREATOR ---
         if ($user->is_instrument_creator) {
-            $stats[] = Stat::make('Total Template Dibuat', QuestionnaireTemplate::where('user_id', $user->id)->count())
-                ->description('Jumlah template yang Anda rancang')
+            $stats[] = Stat::make(__('Total Template Dibuat'), QuestionnaireTemplate::where('user_id', $user->id)->count())
+                ->description(__('Jumlah template yang Anda rancang'))
                 ->descriptionIcon('heroicon-m-document-duplicate')
                 ->color('success');
         }
@@ -42,18 +42,18 @@ class UserStatsOverview extends BaseWidget
                 ->orderByDesc('responses_count')
                 ->first();
 
-            $stats[] = Stat::make('Total Survei Anda', $user->surveys()->count())
-                ->description('Jumlah survei yang telah Anda buat')
+            $stats[] = Stat::make(__('Total Survei Anda'), $user->surveys()->count())
+                ->description(__('Jumlah survei yang telah Anda buat'))
                 ->descriptionIcon('heroicon-m-clipboard-document-list')
                 ->color('info');
 
-            $stats[] = Stat::make('Total Responden Terkumpul', $totalResponses)
-                ->description('Dari semua survei Anda')
+            $stats[] = Stat::make(__('Total Responden Terkumpul'), $totalResponses)
+                ->description(__('Dari semua survei Anda'))
                 ->descriptionIcon('heroicon-m-users')
                 ->color('primary');
 
-            $stats[] = Stat::make('Survei Terpopuler', $mostPopularSurvey->title ?? 'Belum Ada')
-                ->description($mostPopularSurvey ? ($mostPopularSurvey->responses_count . ' Responden') : 'Belum ada responden')
+            $stats[] = Stat::make(__('Survei Terpopuler'), $mostPopularSurvey->title ?? __('Belum Ada'))
+                ->description($mostPopularSurvey ? ($mostPopularSurvey->responses_count . ' Responden') : __('Belum ada responden'))
                 ->descriptionIcon('heroicon-m-star')
                 ->color('warning');
         }

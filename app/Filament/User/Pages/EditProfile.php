@@ -20,9 +20,31 @@ class EditProfile extends Page implements HasForms
 
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
     protected static string $view = 'filament.user.pages.edit-profile';
-    protected static ?string $navigationLabel = 'Profil Saya';
-    protected static ?string $title = 'Profil Saya';
-    protected static ?string $navigationGroup = 'Profile';
+    // protected static ?string $navigationLabel = 'Profil Saya';
+    // protected static ?string $title = 'Profil Saya';
+    // protected static ?string $navigationGroup = 'Profile';
+
+
+
+
+
+    public static function getNavigationGroup(): ?string
+        {
+            return __('Profile');
+        }
+
+        // Judul Halaman (title)
+        public static function getPluralModelLabel(): string
+        {
+            return __('Profil Saya');
+        }
+
+        // Label Navigasi (sidebar)
+        public static function getNavigationLabel(): string
+        {
+            return __('Profil Saya');
+        }
+
 
     public ?array $data = [];
 
@@ -35,23 +57,23 @@ class EditProfile extends Page implements HasForms
     {
         return $form
             ->schema([
-                Section::make('Informasi Profil')
+                Section::make(__('Informasi Profil'))
                     ->schema([
-                        TextInput::make('name')->label('Nama')->required(),
-                        TextInput::make('email')->label('Alamat Email')->email()->required()->unique(ignoreRecord: true),
+                        TextInput::make('name')->label(__('Nama'))->required(),
+                        TextInput::make('email')->label(__('Alamat Email'))->email()->required()->unique(ignoreRecord: true),
                     ]),
-                Section::make('Ubah Password')
-                    ->description('Kosongkan jika Anda tidak ingin mengubah password.') // [FIX] Tambahkan deskripsi
+                Section::make(__('Ubah Password'))
+                    ->description(__('Kosongkan jika Anda tidak ingin mengubah password.')) // [FIX] Tambahkan deskripsi
                     ->schema([
                         TextInput::make('password')
-                            ->label('Password Baru')
+                            ->label(__('Password Baru'))
                             ->password()
                             ->revealable()
                             // [FIX] Gunakan aturan validasi yang lebih fleksibel
                             ->rule(Password::default()->sometimes()) 
                             ->dehydrated(fn ($state) => filled($state)), // Hanya simpan jika diisi
                         TextInput::make('password_confirmation')
-                            ->label('Konfirmasi Password Baru')
+                            ->label(__('Konfirmasi Password Baru'))
                             ->password()
                             ->revealable()
                             ->same('password')
@@ -82,7 +104,7 @@ class EditProfile extends Page implements HasForms
         $this->data['password'] = null;
         $this->data['password_confirmation'] = null;
 
-        Notification::make()->title('Profil berhasil diperbarui!')->success()->send();
+        Notification::make()->title(__('Profil berhasil diperbarui!'))->success()->send();
     }
 
     /**
@@ -94,7 +116,7 @@ class EditProfile extends Page implements HasForms
 
         return [
             Action::make('requestCreatorRole')
-                ->label(fn (): string => $user->requested_creator_at ? 'Pengajuan Creator Terkirim' : 'Ajukan Akses Instrument Creator')
+                ->label(fn (): string => $user->requested_creator_at ? __('Pengajuan Creator Terkirim') : __('Ajukan Akses Instrument Creator'))
                 ->color('primary')
                 ->icon('heroicon-o-sparkles')
                 // Panggil method yang spesifik untuk creator
@@ -103,7 +125,7 @@ class EditProfile extends Page implements HasForms
                 ->disabled(fn (): bool => !is_null($user->requested_creator_at)),
 
             Action::make('requestResearcherRole')
-                ->label(fn (): string => $user->requested_researcher_at ? 'Pengajuan Researcher Terkirim' : 'Ajukan Akses Researcher')
+                ->label(fn (): string => $user->requested_researcher_at ? __('Pengajuan Researcher Terkirim') : __('Ajukan Akses Researcher'))
                 ->color('primary')
                 ->icon('heroicon-o-beaker')
                 // Panggil method yang spesifik untuk researcher
@@ -145,15 +167,15 @@ class EditProfile extends Page implements HasForms
         $admins = Admin::all(); 
         if ($admins->isNotEmpty()) {
             Notification::make()
-                ->title('Permohonan Akses Baru')
-                ->body("Pengguna {$user->name} mengajukan permohonan untuk menjadi {$roleName}.")
+                ->title(__('Permohonan Akses Baru'))
+                ->body(__('Pengguna :name mengajukan permohonan untuk menjadi :role.', ['name' => $user->name, 'role' => $roleName]))
                 ->sendToDatabase($admins);
         }
 
         // Beri notifikasi ke user
         Notification::make()
-            ->title('Pengajuan Terkirim!')
-            ->body("Permohonan Anda untuk menjadi {$roleName} telah dikirim dan akan direview oleh Admin.")
+            ->title(__('Pengajuan Terkirim!'))
+            ->body(__('Permohonan Anda untuk menjadi :role telah dikirim dan akan direview oleh Admin.', ['role' => $roleName]))
             ->success()
             ->send();
     }

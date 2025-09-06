@@ -18,12 +18,17 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Filament\Admin\Pages\Dashboard;
-
+use Filament\Support\Facades\FilamentView; // <-- Tambahkan ini
+use Illuminate\Support\Facades\Blade; // <-- Tambahkan ini
 
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
+        FilamentView::registerRenderHook(
+            'panels::global-search.after', // Kaitkan setelah komponen pencarian global
+            fn (): string => Blade::render('@livewire(\'language-switcher\')')
+        );
         return $panel
             ->brandName('UMIT Admin')
             ->default()
@@ -58,6 +63,7 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                \App\Http\Middleware\SetLocale::class,
             ])
             ->authMiddleware([
                 Authenticate::class,

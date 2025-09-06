@@ -31,7 +31,7 @@ class ViewSurveyResults extends Page
     {
         return [
             Action::make('export')
-                ->label('Ekspor ke CSV')
+                ->label(__('Ekspor ke CSV'))
                 ->icon('heroicon-o-document-arrow-down')
                 ->color('success')
                 ->action(fn () => $this->exportCsv()),
