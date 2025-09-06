@@ -191,7 +191,7 @@
             class="select w-full rounded-xl"
             onchange="this.form.submit()"
           >
-            <option value="">Semua Kuesioner</option>
+            <option value="">{{ __('Semua Kuesioner') }}</option>
             @foreach ($templates as $id => $title)
               <option value="{{ $id }}" @selected(request('template_id') == $id)>{{ $title }}</option>
             @endforeach
