@@ -62,3 +62,7 @@ Route::middleware('auth')->group(function () {
         return Excel::download(new SurveyResultsExport($survey->id), 'hasil-'.$survey->unique_code.'.xlsx');
     })->name('surveys.export');
 });
+
+Route::fallback(function () {
+    return redirect()->to(url()->previous());
+});

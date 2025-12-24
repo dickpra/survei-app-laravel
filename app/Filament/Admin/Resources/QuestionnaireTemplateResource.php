@@ -53,7 +53,6 @@ class QuestionnaireTemplateResource extends Resource
     {
         return $form
             ->schema([
-                // Schema form Anda sudah benar, tidak perlu diubah.
                 Forms\Components\Section::make(__('Informasi Dasar'))
                     ->schema([
                         Forms\Components\TextInput::make('title')->label(__('Judul Template'))->required(),
@@ -63,33 +62,64 @@ class QuestionnaireTemplateResource extends Resource
                 Forms\Components\Section::make(__('Pertanyaan Demografi'))
                      ->schema([
                         Forms\Components\TextInput::make('demographic_title')->label(__('Judul Bagian Demografi'))->required()->default('Demographic Data'),
+                        
                         Forms\Components\Repeater::make('demographic_questions')
-                            ->label(__('Daftar Pertanyaan Demografi'))
-                            // Label item dinamis berbasis UID
-                            ->itemLabel(function (array $state, Forms\Get $get): ?string {
-                                $uids  = collect($get('demographic_questions') ?? [])->pluck('_uid');
-                                $index = $uids->search($state['_uid'] ?? null, true);
-                                return 'Pertanyaan Demografi #' . (($index === false ? 0 : $index) + 1);
-                            })
-                            ->reorderable()
-                            ->schema([
-                                // UID tersembunyi agar bisa dihitung indeksnya
-                                Forms\Components\Hidden::make('_uid')
-                                    ->dehydrated(false) // tidak disimpan ke DB
-                                    ->default(fn () => (string) Str::uuid())
-                                    ->afterStateHydrated(function ($component, $state, callable $set) {
-                                        if (blank($state)) {
-                                            $set($component->getStatePath(), (string) Str::uuid());
-                                        }
+                    ->label(__('Daftar Pertanyaan Demografi'))
+                    ->itemLabel(function (array $state, Forms\Get $get): ?string {
+                        $items = $get('demographic_questions') ?? [];
+                        
+                        // Gunakan values() untuk mereset urutan, lalu ambil _uid
+                        $uids = collect($items)->values()->pluck('_uid');
+                        
+                        // Cari UID state saat ini
+                        $index = $uids->search($state['_uid'] ?? null);
+                        
+                        return __('Pertanyaan Demografi #') . (($index === false ? 0 : $index) + 1);
+                    })
+                    ->reorderable()
+                    ->schema([
+                        // [PERBAIKAN UTAMA DI SINI]
+                        Forms\Components\Hidden::make('_uid')
+                            ->default(fn () => (string) Str::uuid())
+                            // HAPUS atau KOMENTARI baris ini: ->dehydrated(false) 
+                            // Agar UID tersimpan ke DB dan bisa dibaca saat reload
+                            ->afterStateHydrated(function ($component, $state, callable $set) {
+                                // Generate UID baru hanya jika benar-benar kosong
+                                if (blank($state)) {
+                                    $set($component->getStatePath(), (string) Str::uuid());
+                                }
+                            }),
+
+                                Forms\Components\Textarea::make('question_text')
+                                    ->label(__('Isi Pertanyaan'))
+                                    ->required()
+                                    ->live(onBlur: true), 
+
+                                Forms\Components\Select::make('type')
+                                    ->label(__('Tipe Pertanyaan'))
+                                    ->options((['isian' => __('Isian Singkat'), 'dropdown' => __('Dropdown')]))
+                                    ->required()
+                                    ->live(),
+
+                                Forms\Components\Placeholder::make('country_notice')
+                                    ->label(__('Auto-Detect: Negara'))
+                                    ->content(__('Sistem mendeteksi pertanyaan tentang "Negara". Daftar seluruh negara akan dimuat otomatis di halaman survei. Anda tidak perlu mengisi pilihan manual.'))
+                                    ->visible(function (Forms\Get $get) {
+                                        $text = strtolower($get('question_text') ?? '');
+                                        $type = $get('type');
+                                        $isCountry = Str::contains($text, ['negara', 'country', 'origin', 'nasional', 'nationality']);
+                                        return $type === 'dropdown' && $isCountry;
                                     }),
 
-                                Forms\Components\Textarea::make('question_text')->label(__('Isi Pertanyaan'))->required(),
-                                Forms\Components\Select::make('type')->label(__('Tipe Pertanyaan'))
-                                    ->options(['isian' => 'Isian Singkat', 'dropdown' => 'Dropdown'])
-                                    ->required()->live(),
-                                Forms\Components\TagsInput::make('options')->label(__('Pilihan Jawaban (untuk Dropdown)'))
+                                Forms\Components\TagsInput::make('options')
+                                    ->label(__('Pilihan Jawaban (untuk Dropdown)'))
                                     ->helperText(__('Tekan Enter setelah mengetik satu pilihan.'))
-                                    ->visible(fn ($get) => $get('type') === 'dropdown'),
+                                    ->visible(function (Forms\Get $get) {
+                                        $text = strtolower($get('question_text') ?? '');
+                                        $type = $get('type');
+                                        $isCountry = Str::contains($text, ['negara', 'country', 'origin', 'nasional', 'nationality']);
+                                        return $type === 'dropdown' && !$isCountry;
+                                    }),
                             ])
                             ->addActionLabel(__('Tambah Pertanyaan Demografi'))
                             ->defaultItems(1),
@@ -99,23 +129,26 @@ class QuestionnaireTemplateResource extends Resource
                 Forms\Components\Section::make(__('Item Statement (Skala Likert)'))
                     ->schema([
                         Forms\Components\TextInput::make('likert_title')->label(__('Judul Bagian Skala Likert'))->required()->default(__('Item Statements')),
+                        
                         Forms\Components\Repeater::make('likert_questions')
-                            ->label(__('Daftar Pernyataan Skala Likert'))
-                            ->itemLabel(function (array $state, Forms\Get $get): ?string {
-                                $uids  = collect($get('likert_questions') ?? [])->pluck('_uid');
-                                $index = $uids->search($state['_uid'] ?? null, true);
-                                return (__('Pertanyaan #')) . (($index === false ? 0 : $index) + 1);
-                            })
-                            ->reorderable()
-                            ->schema([
-                                Forms\Components\Hidden::make('_uid')
-                                    ->dehydrated(false)
-                                    ->default(fn () => (string) Str::uuid())
-                                    ->afterStateHydrated(function ($component, $state, callable $set) {
-                                        if (blank($state)) {
-                                            $set($component->getStatePath(), (string) Str::uuid());
-                                        }
-                                    }),
+                    ->label(__('Daftar Pernyataan Skala Likert'))
+                    ->itemLabel(function (array $state, Forms\Get $get): ?string {
+                        $items = $get('likert_questions') ?? [];
+                        $uids  = collect($items)->values()->pluck('_uid');
+                        $index = $uids->search($state['_uid'] ?? null);
+                        return (__('Pertanyaan #')) . (($index === false ? 0 : $index) + 1);
+                    })
+                    ->reorderable()
+                    ->schema([
+                        // [PERBAIKAN UTAMA DI SINI]
+                        Forms\Components\Hidden::make('_uid')
+                            ->default(fn () => (string) Str::uuid())
+                            // HAPUS atau KOMENTARI baris ini: ->dehydrated(false)
+                            ->afterStateHydrated(function ($component, $state, callable $set) {
+                                if (blank($state)) {
+                                    $set($component->getStatePath(), (string) Str::uuid());
+                                }
+                            }),
 
                                 Forms\Components\Textarea::make('question_text')->label(__('Isi Pertanyaan'))->required(),
                                 Forms\Components\Select::make('likert_scale')->label(__('Skala Likert'))
@@ -127,7 +160,10 @@ class QuestionnaireTemplateResource extends Resource
                                         '7' => __('Skala 1-7'),
                                     ])->required()->default('5'),
                                 Forms\Components\Radio::make('manner')->label(__('Arah Pertanyaan (Manner)'))
-                                    ->options([__('Positif'), __('Negatif')])
+                                    ->options([
+                                        'positive' => __('Positif'), 
+                                        'negative' => __('Negatif')
+                                    ])
                                     ->required()->default('positive'),
                             ])
                             ->addActionLabel(__('Tambah Pertanyaan'))
@@ -214,4 +250,5 @@ class QuestionnaireTemplateResource extends Resource
             'edit' => Pages\EditQuestionnaireTemplate::route('/{record}/edit'),
         ];
     }
+
 }

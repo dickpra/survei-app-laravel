@@ -11,7 +11,7 @@
   <link href="https://fonts.bunny.net/css?family=be-vietnam-pro:400,600,700,800&display=swap" rel="stylesheet"/>
 
   {{-- AOS (animate on scroll) + Feather Icons --}}
-  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  {{-- <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet"> --}}
   <script defer src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <script defer src="https://unpkg.com/feather-icons"></script>
 

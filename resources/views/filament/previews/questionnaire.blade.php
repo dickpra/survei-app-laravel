@@ -4,6 +4,7 @@
         input:disabled, textarea:disabled, select:disabled {
             cursor: not-allowed;
             background-color: #f3f4f6;
+            color: #6b7280;
         }
         .likert-radio:disabled + label {
             cursor: not-allowed;
@@ -21,11 +22,30 @@
                         <label class="block text-sm font-medium text-gray-700">
                             {{ $loop->iteration }}. {{ $question['question_text'] }}
                         </label>
-                        @if($question['type'] === 'dropdown')
+
+                        @if(($question['type'] ?? 'isian') === 'dropdown')
+                            {{-- [PERBAIKAN] Logic untuk menangani Options kosong / Negara --}}
+                            @php
+                                // 1. Ambil opsi manual jika ada, jika null ganti array kosong
+                                $currentOptions = $question['options'] ?? [];
+
+                                // 2. Deteksi apakah ini pertanyaan Negara
+                                $qText = strtolower($question['question_text'] ?? '');
+                                $isCountry = \Illuminate\Support\Str::contains($qText, ['negara', 'country', 'origin']);
+
+                                // 3. Jika Negara & Opsi kosong, panggil list negara dari Resource
+                                if ($isCountry && empty($currentOptions)) {
+                                    // Pastikan path class ini sesuai dengan file Resource Anda
+                                    $currentOptions = \App\Filament\Admin\Resources\QuestionnaireTemplateResource::getCountries();
+                                }
+                            @endphp
+
                             <select disabled class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                                 <option>-- Pilihan --</option>
-                                @foreach($question['options'] as $option)
-                                    <option>{{ $option }}</option>
+                                {{-- Loop data yang sudah aman --}}
+                                @foreach($currentOptions as $val => $label)
+                                    {{-- Handle jika array asosiatif (Negara) atau array biasa (Manual) --}}
+                                    <option>{{ is_string($val) ? $label : $label }}</option>
                                 @endforeach
                             </select>
                         @else
@@ -43,12 +63,49 @@
             <h2 class="text-xl font-bold mb-4">{{ $template->likert_title }}</h2>
             <div class="space-y-6">
                 @php
+                    // $likertLabels = [
+                    //     3 => [1 => 'Tidak Setuju', 2 => 'Netral', 3 => 'Setuju'],
+                    //     4 => [1 => 'Sangat Tidak Setuju', 2 => 'Tidak Setuju', 3 => 'Setuju', 4 => 'Sangat Setuju'],
+                    //     5 => [1 => 'Sangat Tidak Setuju', 2 => 'Tidak Setuju', 3 => 'Netral', 4 => 'Setuju', 5 => 'Sangat Setuju'],
+                    //     6 => [1 => 'Sangat Tidak Setuju', 2 => 'Tidak Setuju', 3 => 'Agak Tidak Setuju', 4 => 'Agak Setuju', 5 => 'Setuju', 6 => 'Sangat Setuju'],
+                    //     7 => [1 => 'Sangat Tidak Setuju', 2 => 'Tidak Setuju', 3 => 'Agak Tidak Setuju', 4 => 'Netral', 5 => 'Agak Setuju', 6 => 'Setuju', 7 => 'Sangat Setuju'],
+                    // ];
                     $likertLabels = [
-                        3 => [1 => 'Tidak Setuju', 2 => 'Netral', 3 => 'Setuju'],
-                        4 => [1 => 'Sangat Tidak Setuju', 2 => 'Tidak Setuju', 3 => 'Setuju', 4 => 'Sangat Setuju'],
-                        5 => [1 => 'Sangat Tidak Setuju', 2 => 'Tidak Setuju', 3 => 'Netral', 4 => 'Setuju', 5 => 'Sangat Setuju'],
-                        6 => [1 => 'Sangat Tidak Setuju', 2 => 'Tidak Setuju', 3 => 'Agak Tidak Setuju', 4 => 'Agak Setuju', 5 => 'Setuju', 6 => 'Sangat Setuju'],
-                        7 => [1 => 'Sangat Tidak Setuju', 2 => 'Tidak Setuju', 3 => 'Agak Tidak Setuju', 4 => 'Netral', 5 => 'Agak Setuju', 6 => 'Setuju', 7 => 'Sangat Setuju'],
+                        3 => [
+                            1 => 'Disagree',
+                            2 => 'Neutral',
+                            3 => 'Agree',
+                        ],
+                        4 => [
+                            1 => 'Strongly Disagree',
+                            2 => 'Disagree',
+                            3 => 'Agree',
+                            4 => 'Strongly Agree',
+                        ],
+                        5 => [
+                            1 => 'Strongly Disagree',
+                            2 => 'Disagree',
+                            3 => 'Neutral',
+                            4 => 'Agree',
+                            5 => 'Strongly Agree',
+                        ],
+                        6 => [
+                            1 => 'Strongly Disagree',
+                            2 => 'Disagree',
+                            3 => 'Somewhat Disagree',
+                            4 => 'Somewhat Agree',
+                            5 => 'Agree',
+                            6 => 'Strongly Agree',
+                        ],
+                        7 => [
+                            1 => 'Strongly Disagree',
+                            2 => 'Disagree',
+                            3 => 'Somewhat Disagree',
+                            4 => 'Neutral',
+                            5 => 'Somewhat Agree',
+                            6 => 'Agree',
+                            7 => 'Strongly Agree',
+                        ],
                     ];
                 @endphp
                 @foreach($template->likert_questions as $index => $question)
