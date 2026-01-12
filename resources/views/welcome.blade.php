@@ -209,6 +209,12 @@
   </div>
 </header>
 
+@php
+    function hasContent($value) {
+        return is_array($value) && count($value) > 0;
+    }
+@endphp
+
 
 <main class="max-w-7xl mx-auto px-4">
   {{-- =================== HERO / DASHBOARD =================== --}}
@@ -316,147 +322,276 @@
   </section>
 
   {{-- =================== ABOUT =================== --}}
-  <section id="about" class="mt-10" data-aos="fade-up">
-    <h2 class="text-2xl md:text-3xl font-extrabold title-underline" style="color:var(--text-strong)">About Me</h2>
-    <div class="card mt-4 p-6">
-      @if(is_array($settings?->about_me) && count($settings->about_me))
-        <div class="space-y-6">
-          @foreach($settings->about_me as $block)
-            @include('partials._builder-block', ['block' => $block])
-          @endforeach
-        </div>
-      @else
-        <p style="color:var(--text-muted)">{{ __('Belum ada konten.') }}</p>
-      @endif
+  @if(hasContent($settings?->about_me))
+  <section id="about" class="mt-14" data-aos="fade-up">
+    <div class="max-w-4xl">
+      <span class="text-sm font-semibold uppercase tracking-wider"
+            style="color:var(--primary)">
+        {{ __('Tentang') }}
+      </span>
+
+      <h2 class="mt-2 text-2xl md:text-3xl font-extrabold title-underline"
+          style="color:var(--text-strong)">
+        About Me
+      </h2>
+
+      <p class="mt-3 text-base"
+        style="color:var(--text-muted)">
+        {{ __('Informasi singkat mengenai latar belakang, tujuan, dan visi platform ini.') }}
+      </p>
+    </div>
+
+    <div class="card mt-6 p-6 md:p-8">
+      <div class="space-y-8">
+        @foreach($settings->about_me as $block)
+          @include('partials._builder-block', ['block' => $block])
+        @endforeach
+      </div>
     </div>
   </section>
+  @endif
+
 
   {{-- =================== CREDIT =================== --}}
-  <section id="credit" class="mt-10" data-aos="fade-up">
-    <h2 class="text-2xl md:text-3xl font-extrabold title-underline" style="color:var(--text-strong)">{{ __('Credit') }}</h2>
-    <div class="card mt-4 p-6">
-      @if(is_array($settings?->credit) && count($settings->credit))
-        <div class="space-y-6">
-          @foreach($settings->credit as $block)
-            @include('partials._builder-block', ['block' => $block])
-          @endforeach
-        </div>
-      @else
-        <p style="color:var(--text-muted)">{{ __('Belum ada konten.') }}</p>
-      @endif
+ @if(hasContent($settings?->credit))
+  <section id="credit" class="mt-16" data-aos="fade-up">
+    <div class="max-w-4xl">
+      <span class="text-sm font-semibold uppercase tracking-wider"
+            style="color:var(--primary)">
+        Apresiasi
+      </span>
+
+      <h2 class="mt-2 text-2xl md:text-3xl font-extrabold title-underline"
+          style="color:var(--text-strong)">
+        Credit
+      </h2>
+
+      <p class="mt-3"
+        style="color:var(--text-muted)">
+        Pihak, institusi, dan sumber yang berkontribusi dalam pengembangan platform ini.
+      </p>
+    </div>
+
+    <div class="card mt-6 p-6 md:p-8">
+      <div class="space-y-6">
+        @foreach($settings->credit as $block)
+          @include('partials._builder-block', ['block' => $block])
+        @endforeach
+      </div>
     </div>
   </section>
+  @endif
+
 
   {{-- =================== GUIDEBOOK =================== --}}
-  <section id="guidebook" class="mt-10" data-aos="fade-up">
-    <h2 class="text-2xl md:text-3xl font-extrabold title-underline" style="color:var(--text-strong)">{{ __('Guidebook') }}</h2>
-    <div class="card mt-4 p-6">
-      @if(is_array($settings?->guidebook) && count($settings->guidebook))
-        <div class="space-y-6">
-          @foreach($settings->guidebook as $block)
-            @include('partials._builder-block', ['block' => $block])
-          @endforeach
-        </div>
-      @else
-        <p style="color:var(--text-muted)">Belum ada konten.</p>
-      @endif
+  @if(hasContent($settings?->guidebook))
+<section id="guidebook" class="mt-16" data-aos="fade-up">
+  <div class="max-w-4xl">
+    <span class="text-sm font-semibold uppercase tracking-wider"
+          style="color:var(--primary)">
+      Panduan
+    </span>
+
+    <h2 class="mt-2 text-2xl md:text-3xl font-extrabold title-underline"
+        style="color:var(--text-strong)">
+      Guidebook
+    </h2>
+
+    <p class="mt-3"
+       style="color:var(--text-muted)">
+      Petunjuk penggunaan platform untuk memastikan pengisian survei yang tepat dan efektif.
+    </p>
+  </div>
+
+  <div class="card mt-6 p-6 md:p-8">
+    <div class="space-y-8">
+      @foreach($settings->guidebook as $block)
+        @include('partials._builder-block', ['block' => $block])
+      @endforeach
     </div>
-  </section>
+  </div>
+</section>
+@endif
+
 
   {{-- =================== METODOLOGI =================== --}}
-  <section id="metodologi" class="mt-10 mb-14" data-aos="fade-up">
-    <h2 class="text-2xl md:text-3xl font-extrabold title-underline" style="color:var(--text-strong)">{{ __('Metodologi') }}</h2>
-    <div class="card mt-4 p-6">
-      @if(is_array($settings?->metodologi) && count($settings->metodologi))
-        <div class="space-y-6">
-          @foreach($settings->metodologi as $block)
-            @include('partials._builder-block', ['block' => $block])
-          @endforeach
-        </div>
-      @else
-        <p style="color:var(--text-muted)">{{ __('Belum ada konten.') }}</p>
-      @endif
+  @if(hasContent($settings?->metodologi))
+<section id="metodologi" class="mt-16 mb-20" data-aos="fade-up">
+  <div class="max-w-4xl">
+    <span class="text-sm font-semibold uppercase tracking-wider"
+          style="color:var(--primary)">
+      Pendekatan
+    </span>
+
+    <h2 class="mt-2 text-2xl md:text-3xl font-extrabold title-underline"
+        style="color:var(--text-strong)">
+      Metodologi
+    </h2>
+
+    <p class="mt-3"
+       style="color:var(--text-muted)">
+      Penjelasan metode, pendekatan, dan prinsip yang digunakan dalam penyusunan survei.
+    </p>
+  </div>
+
+  <div class="card mt-6 p-6 md:p-8">
+    <div class="space-y-8">
+      @foreach($settings->metodologi as $block)
+        @include('partials._builder-block', ['block' => $block])
+      @endforeach
     </div>
-  </section>
-</main>
+  </div>
+</section>
+@endif
+
 
 {{-- =================== FOOTER =================== --}}
-<footer class="pt-6 border-t" style="background:var(--bg-card); border-color:var(--border)">
-  <div class="footer-grad-line"></div>
-  <div class="max-w-7xl mx-auto px-4 py-10">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+<footer class="mt-20 border-t"
+        style="background:linear-gradient(180deg,var(--bg-section),var(--bg-card)); border-color:var(--border)">
+  
+  {{-- Decorative Top Line --}}
+  <div class="h-[6px] w-full"
+       style="background:linear-gradient(90deg,var(--primary),var(--accent)); opacity:.9"></div>
+
+  <div class="max-w-7xl mx-auto px-4 py-14">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-10">
+
+      {{-- ================= BRAND ================= --}}
       <div>
-         <div class="flex items-center space-x-2">
-            <img src="{{ asset('img/umit-logo.png') }}" alt="Logo" class=" h-10 w-auto">
-            {{-- <span class="text-xl font-bold text-primary-700 dark:text-accent-500">UMIX</span> --}}
-    </div>
-        <p class="text-sm" style="color:var(--text-muted)">
-            {{ __('Rancang instrumen penelitian secara sistematis. Analisis data yang dihasilkan untuk memperoleh wawasan mendalam dan mendukung pengambilan keputusan yang berbasis bukti.') }}
+        <div class="flex items-center gap-3">
+          <img src="{{ asset('img/umit-logo.png') }}" alt="UMIT Logo" class="h-11 w-auto">
+          {{-- <span class="text-xl font-extrabold tracking-tight" style="color:var(--text-strong)">UMIT</span> --}}
+        </div>
+
+        <p class="mt-4 text-sm leading-relaxed"
+           style="color:var(--text-muted)">
+          {{ __('Design research instruments systematically. Analysis of the resulting data to gain in-depth insight and support proof-based decision making.') }}
+        </p>
+
+        <div class="mt-4 text-xs"
+             style="color:var(--text-muted)">
+          {{ __('Survei platform & Research') }}
+        </div>
       </div>
 
+      {{-- ================= NAVIGATION ================= --}}
       <div>
-        <h4 class="text-sm font-bold mb-3" style="color:var(--text-strong)">{{ __('Navigasi') }}</h4>
-        <ul class="space-y-2 text-sm">
-          <li><a href="#dashboard" style="color:var(--text-muted)" class="hover:underline">{{ __('Dashboard') }}</a></li>
-          <li><a href="#about" style="color:var(--text-muted)" class="hover:underline">{{ __('About Me') }}</a></li>
-          <li><a href="#credit" style="color:var(--text-muted)" class="hover:underline">{{ __('Credit') }}</a></li>
-          <li><a href="#guidebook" style="color:var(--text-muted)" class="hover:underline">{{ __('Guidebook') }}</a></li>
-          <li><a href="#metodologi" style="color:var(--text-muted)" class="hover:underline">{{ __('Metodologi') }}</a></li>
+        <h4 class="text-sm font-extrabold mb-4 tracking-wide"
+            style="color:var(--text-strong)">
+          {{ __('Navigasi') }}
+        </h4>
+
+        <ul class="space-y-3 text-sm">
+          @foreach([
+            ['#dashboard', 'Dashboard'],
+            ['#about', 'About Me'],
+            ['#credit', 'Credit'],
+            ['#guidebook', 'Guidebook'],
+            ['#metodologi', 'Metodologi'],
+          ] as [$href, $label])
+            <li>
+              <a href="{{ $href }}"
+                 class="inline-flex items-center gap-2 transition-all group"
+                 style="color:var(--text-muted)">
+                <span class="h-1.5 w-1.5 rounded-full opacity-0 group-hover:opacity-100"
+                      style="background:var(--primary)"></span>
+                <span class="group-hover:translate-x-1 transition-transform">
+                  {{ __($label) }}
+                </span>
+              </a>
+            </li>
+          @endforeach
         </ul>
       </div>
 
+      {{-- ================= CONTACT ================= --}}
       <div>
-        <h4 class="text-sm font-bold mb-3" style="color:var(--text-strong)">{{ __('Kontak') }}</h4>
-            <ul class="space-y-2 text-sm" style="color:var(--text-muted)">
-                @if($settings?->contact_email)
-                    <li class="flex items-center gap-2">
-                        <i data-feather="mail" aria-hidden="true" class="w-4 h-4"></i>
-                        <span>{{ $settings->contact_email }}</span>
-                    </li>
-                @endif
-                @if($settings?->contact_phone)
-                    <li class="flex items-center gap-2">
-                        <i data-feather="phone" aria-hidden="true" class="w-4 h-4"></i>
-                        <span>{{ $settings->contact_phone }}</span>
-                    </li>
-                @endif
-            </ul>
+        <h4 class="text-sm font-extrabold mb-4 tracking-wide"
+            style="color:var(--text-strong)">
+          {{ __('Kontak') }}
+        </h4>
 
-        <div class="flex items-center gap-2 mt-3">
-          <a href="#" class="w-9 h-9 rounded-md inline-flex items-center justify-center" style="background:var(--bg-section); color:var(--text-muted)">
-            <i data-feather="facebook" aria-hidden="true"></i>
-          </a>
-          <a href="#" class="w-9 h-9 rounded-md inline-flex items-center justify-center" style="background:var(--bg-section); color:var(--text-muted)">
-            <i data-feather="twitter" aria-hidden="true"></i>
-          </a>
-          <a href="#" class="w-9 h-9 rounded-md inline-flex items-center justify-center" style="background:var(--bg-section); color:var(--text-muted)">
-            <i data-feather="instagram" aria-hidden="true"></i>
-          </a>
+        <ul class="space-y-3 text-sm">
+          @if($settings?->contact_email)
+            <li class="flex items-center gap-3">
+              <span class="w-9 h-9 rounded-lg inline-flex items-center justify-center"
+                    style="background:var(--bg-section); color:var(--primary)">
+                <i data-feather="mail" class="w-4 h-4"></i>
+              </span>
+              <span style="color:var(--text-muted)">
+                {{ $settings->contact_email }}
+              </span>
+            </li>
+          @endif
+
+          @if($settings?->contact_phone)
+            <li class="flex items-center gap-3">
+              <span class="w-9 h-9 rounded-lg inline-flex items-center justify-center"
+                    style="background:var(--bg-section); color:var(--primary)">
+                <i data-feather="phone" class="w-4 h-4"></i>
+              </span>
+              <span style="color:var(--text-muted)">
+                {{ $settings->contact_phone }}
+              </span>
+            </li>
+          @endif
+        </ul>
+
+        {{-- Social --}}
+        <div class="flex items-center gap-3 mt-5">
+          @foreach(['facebook','twitter','instagram'] as $icon)
+            <a href="#"
+               class="w-10 h-10 rounded-xl inline-flex items-center justify-center transition"
+               style="background:var(--bg-section); color:var(--text-muted)"
+               onmouseover="this.style.color='var(--primary)'"
+               onmouseout="this.style.color='var(--text-muted)'">
+              <i data-feather="{{ $icon }}" class="w-4 h-4"></i>
+            </a>
+          @endforeach
         </div>
       </div>
 
+      {{-- ================= QUICK ACTION ================= --}}
       <div>
-        <h4 class="text-sm font-bold mb-3" style="color:var(--text-strong)">{{ __('Aksi Cepat') }}</h4>
-        <div class="flex flex-col gap-2">
-            <div class="mt-4">
-            {{-- <h4 class="text-sm font-bold mb-2" style="color:var(--text-strong)">{{ __('Tema') }}</h4> --}}
-            <button id="themeToggle" type="button" class="toggle">
-                <span id="themeIcon" aria-hidden="true">🌙</span>
-                <span id="themeText" class="text-sm">Dark</span>
+        <h4 class="text-sm font-extrabold mb-4 tracking-wide"
+            style="color:var(--text-strong)">
+          {{ __('Aksi Cepat') }}
+        </h4>
+
+        <div class="flex flex-col space-y-3">
+          {{-- Theme Toggle --}}
+          <div>
+            <button id="themeToggle"
+                    type="button"
+                    class="toggle w-full justify-center">
+              <span id="themeIcon" aria-hidden="true">🌙</span>
+              <span id="themeText" class="text-sm">Dark</span>
             </button>
-            </div>
+          </div>
 
-          <a href="{{ url('/register') }}" class="cta px-4 py-2 rounded-lg text-sm font-semibold text-center">{{ __('Buat Akun') }}</a>
-          <a href="{{ url('/login') }}" class="px-4 py-2 rounded-lg text-sm font-semibold text-center" style="border:1px solid var(--border); background:var(--bg-page); color:var(--text)">{{ __('Masuk') }}</a>
+          <a href="{{ url('/register') }}"
+             class="cta w-full px-4 py-2.5 rounded-lg text-sm font-bold text-center block">
+            {{ __('Buat Akun Gratis') }}
+          </a>
+
+          <a href="{{ url('/login') }}"
+             class="w-full px-4 py-2.5 rounded-lg text-sm font-semibold text-center block"
+             style="border:1px solid var(--border); background:var(--bg-page); color:var(--text)">
+            {{ __('Masuk') }}
+          </a>
         </div>
       </div>
+
     </div>
 
-    <div class="border-t mt-8 pt-6 text-center text-sm" style="border-color:var(--border); color:var(--text-muted)">
-      © {{ date('Y') }} UMIT. All rights reserved.
+    {{-- ================= COPYRIGHT ================= --}}
+    <div class="border-t mt-12 pt-6 text-center text-sm"
+         style="border-color:var(--border); color:var(--text-muted)">
+      © {{ date('Y') }} <strong style="color:var(--text-strong)">UMIT</strong>. All rights reserved.
     </div>
   </div>
 </footer>
+
 
 {{-- =================== Scripts =================== --}}
 
