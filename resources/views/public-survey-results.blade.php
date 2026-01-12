@@ -92,9 +92,9 @@
                     {{-- TAB NAVIGATION --}}
                     <div class="mb-6 border-b border-gray-200">
                         <nav class="-mb-px flex space-x-8 overflow-x-auto" aria-label="Tabs">
-                            <button onclick="switchTab('demographic')" id="btn-demographic" class="tab-btn active whitespace-nowrap py-4 px-1 text-sm font-medium">
+                            {{-- <button onclick="switchTab('demographic')" id="btn-demographic" class="tab-btn active whitespace-nowrap py-4 px-1 text-sm font-medium">
                                 Demographic Data
-                            </button>
+                            </button> --}}
                             <button onclick="switchTab('anova')" id="btn-anova" class="tab-btn whitespace-nowrap py-4 px-1 text-sm font-medium">
                                 Analisis Varian (Tabel)
                             </button>
@@ -341,137 +341,141 @@
                     {{-- TAB 2: ANALISIS VARIAN (TABEL) --}}
                     {{-- TAB 2: ANALISIS VARIAN (TABEL STATISTIK LENGKAP) --}}
                     <div id="tab-anova" class="tab-content">
-                    @php
-                        // =================================================================================
-                        // 1. ENGINE STATISTIK (ANOVA & MATH HELPER)
-                        // =================================================================================
-                        
-                        // A. Fungsi Standar Deviasi (Sample SD)
-                        if (!function_exists('stats_sd')) {
-                            function stats_sd($array) {
-                                $n = count($array);
-                                if ($n <= 1) return 0;
-                                $mean = array_sum($array) / $n;
-                                $carry = 0.0;
-                                foreach ($array as $val) { $carry += pow($val - $mean, 2); }
-                                return sqrt($carry / ($n - 1));
-                            }
-                        }
+    @php
+        // =================================================================================
+        // 1. ENGINE STATISTIK LENGKAP (PHP NATIVE MATH)
+        // =================================================================================
+        
+        // A. Standar Deviasi
+        if (!function_exists('stats_sd')) {
+            function stats_sd($array) {
+                $n = count($array);
+                if ($n <= 1) return 0;
+                $mean = array_sum($array) / $n;
+                $carry = 0.0;
+                foreach ($array as $val) { $carry += pow($val - $mean, 2); }
+                return sqrt($carry / ($n - 1));
+            }
+        }
 
-                        // B. Fungsi Menghitung ANOVA One-Way (F-Value & P-Value)
-                        if (!function_exists('stats_anova')) {
-                            function stats_anova($groupedData) {
-                                // $groupedData format: ['Male' => [80, 90], 'Female' => [70, 75]]
-                                
-                                // 1. Flat data & Global Mean
-                                $allValues = [];
-                                foreach ($groupedData as $group) {
-                                    foreach ($group as $v) { $allValues[] = $v; }
-                                }
-                                $N = count($allValues);
-                                $k = count($groupedData); // Jumlah grup
-                                
-                                if ($N <= $k || $k < 2) return ['f' => 0, 'p' => 1]; // Tidak bisa dihitung
+        // B. Log Gamma Function (Diperlukan untuk Probabilitas)
+        if (!function_exists('stats_gamma_ln')) {
+            function stats_gamma_ln($x) {
+                $cof = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+                $y = $x; $tmp = $x + 5.5;
+                $tmp -= ($x + 0.5) * log($tmp);
+                $ser = 1.000000000190015;
+                for ($j = 0; $j <= 5; $j++) $ser += $cof[$j] / ++$y;
+                return -$tmp + log(2.5066282746310005 * $ser / $x);
+            }
+        }
 
-                                $grandMean = array_sum($allValues) / $N;
+        // C. Incomplete Beta Function (Jantung perhitungan P-Value)
+        if (!function_exists('stats_betai')) {
+            function stats_betai($a, $b, $x) {
+                if ($x < 0.0 || $x > 1.0) return 0.0;
+                if ($x == 0.0 || $x == 1.0) $bt = 0.0;
+                else $bt = exp(stats_gamma_ln($a + $b) - stats_gamma_ln($a) - stats_gamma_ln($b) + $a * log($x) + $b * log(1.0 - $x));
+                
+                if ($x < ($a + 1.0) / ($a + $b + 2.0)) {
+                    $m = 1; $eps = 3.0e-7; $qab = $a + $b; $qap = $a + 1.0; $qam = $a - 1.0;
+                    $c = 1.0; $d = 1.0 - $qab * $x / $qap;
+                    if (abs($d) < 1.0e-30) $d = 1.0e-30;
+                    $d = 1.0 / $d; $h = $d;
+                    for (; $m <= 100; $m++) {
+                        $m2 = 2 * $m; $aa = $m * ($b - $m) * $x / (($qam + $m2) * ($a + $m2));
+                        $d = 1.0 + $aa * $d; if (abs($d) < 1.0e-30) $d = 1.0e-30;
+                        $c = 1.0 + $aa / $c; if (abs($c) < 1.0e-30) $c = 1.0e-30;
+                        $d = 1.0 / $d; $h *= $d * $c;
+                        $aa = -($a + $m) * ($qab + $m) * $x / (($a + $m2) * ($qap + $m2));
+                        $d = 1.0 + $aa * $d; if (abs($d) < 1.0e-30) $d = 1.0e-30;
+                        $c = 1.0 + $aa / $c; if (abs($c) < 1.0e-30) $c = 1.0e-30;
+                        $d = 1.0 / $d; $del = $d * $c; $h *= $del;
+                        if (abs($del - 1.0) < $eps) break;
+                    }
+                    return $bt * $h / $a;
+                } else {
+                    return 1.0 - stats_betai($b, $a, 1.0 - $x);
+                }
+            }
+        }
 
-                                // 2. Sum of Squares Between (SSB)
-                                $ssb = 0;
-                                foreach ($groupedData as $group) {
-                                    $n_i = count($group);
-                                    if ($n_i == 0) continue;
-                                    $mean_i = array_sum($group) / $n_i;
-                                    $ssb += $n_i * pow($mean_i - $grandMean, 2);
-                                }
+        // D. Fungsi Utama Hitung P-Value dari F
+        if (!function_exists('stats_f_probability')) {
+            function stats_f_probability($f, $df1, $df2) {
+                if ($f <= 0 || $df1 <= 0 || $df2 <= 0) return 1.0;
+                $x = $df2 / ($df2 + $df1 * $f);
+                // P-value adalah area ekor distribusi F
+                return stats_betai($df2 / 2, $df1 / 2, $x);
+            }
+        }
 
-                                // 3. Sum of Squares Within (SSW)
-                                $ssw = 0;
-                                foreach ($groupedData as $group) {
-                                    $n_i = count($group);
-                                    if ($n_i == 0) continue;
-                                    $mean_i = array_sum($group) / $n_i;
-                                    foreach ($group as $val) {
-                                        $ssw += pow($val - $mean_i, 2);
-                                    }
-                                }
+        // E. Fungsi ANOVA One-Way
+        if (!function_exists('stats_anova')) {
+            function stats_anova($groupedData) {
+                $allValues = [];
+                foreach ($groupedData as $group) { foreach ($group as $v) $allValues[] = $v; }
+                $N = count($allValues); $k = count($groupedData);
+                
+                // Minimal 2 grup dan Total N > jumlah grup
+                if ($N <= $k || $k < 2) return ['f' => 0, 'p' => null];
 
-                                // 4. Degrees of Freedom
-                                $df_between = $k - 1;
-                                $df_within  = $N - $k;
+                $grandMean = array_sum($allValues) / $N;
+                $ssb = 0; $ssw = 0;
 
-                                // 5. Mean Squares
-                                $ms_between = $ssb / $df_between;
-                                $ms_within  = ($df_within > 0) ? ($ssw / $df_within) : 0;
+                foreach ($groupedData as $group) {
+                    $n_i = count($group);
+                    if ($n_i == 0) continue;
+                    $mean_i = array_sum($group) / $n_i;
+                    $ssb += $n_i * pow($mean_i - $grandMean, 2);
+                    foreach ($group as $val) $ssw += pow($val - $mean_i, 2);
+                }
 
-                                // 6. F-Value
-                                if ($ms_within == 0) return ['f' => 0, 'p' => 1];
-                                $f = $ms_between / $ms_within;
+                $df1 = $k - 1;       // df between
+                $df2 = $N - $k;      // df within
+                $msb = $ssb / $df1;
+                $msw = ($df2 > 0) ? ($ssw / $df2) : 0;
 
-                                // 7. P-Value Approximation (Simple logic for display)
-                                // Note: Menghitung Exact P-value butuh fungsi Incomplete Beta. 
-                                // Di sini kita pakai pendekatan sederhana atau library PHP jika ada.
-                                // Jika server tidak punya stats extension, kita return F saja dan P null (atau estimasi kasar).
-                                
-                                $p = stats_f_probability($f, $df_between, $df_within);
+                if ($msw == 0) return ['f' => 0, 'p' => null];
+                
+                $f = $msb / $msw;
+                
+                // HITUNG P-VALUE MENGGUNAKAN RUMUS BARU DI ATAS
+                $p = stats_f_probability($f, $df1, $df2);
 
-                                return ['f' => $f, 'p' => $p];
-                            }
-                        }
+                return ['f' => $f, 'p' => $p];
+            }
+        }
 
-                        // C. Helper Estimasi Probabilitas F (Logic Aproksimasi)
-                        if (!function_exists('stats_f_probability')) {
-                            function stats_f_probability($f, $d1, $d2) {
-                                if ($f <= 0) return 1.0;
-                                // Menggunakan pendekatan sederhana Paulson (1942) untuk normalisasi F ke Z-score
-                                // Ini estimasi agar tidak perlu library berat.
-                                // Ref: Approximations to the F-distribution
-                                
-                                $x = $d2 / ($d2 + $d1 * $f);
-                                
-                                // Jika d1 atau d2 kecil, estimasi ini kurang akurat tapi cukup untuk visualisasi web "Signifikan/Tidak"
-                                // Untuk akurasi akademik 100% disarankan pakai SPSS, tapi ini "best effort" di PHP native.
-                                
-                                // Logika fallback sederhana: Semakin besar F, semakin kecil P
-                                // Kita gunakan library 'stats_cdf_f' jika ada di server (jarang ada di shared hosting)
-                                if (function_exists('stats_cdf_f')) {
-                                    return 1 - stats_cdf_f($f, $d1, $d2, 1); 
-                                }
-                                
-                                // Fallback manual (sangat kasar, hanya untuk indikator visual)
-                                // Formula Log-Linear approximation untuk p-value < 0.05
-                                // Disarankan memberi catatan kaki.
-                                return null; // Return null agar di view kita bisa handle sebagai "See details"
-                            }
-                        }
+        // =================================================================================
+        // 2. PERSIAPAN DATA SURVEY
+        // =================================================================================
+        // Gunakan $responses dari Controller (sudah terfilter)
+        $surveyData = $responses ?? $survey->responses;
+        
+        // Hitung Total Skor Likert per Responden
+        $respondentScores = [];
+        foreach ($surveyData as $resp) {
+            $totalScore = 0;
+            if(isset($resp->answers['likert'])) {
+                foreach($resp->answers['likert'] as $lAnswer) {
+                    $totalScore += (int)($lAnswer['answer'] ?? 0);
+                }
+            }
+            $respondentScores[$resp->id] = $totalScore;
+        }
 
-                        // =================================================================================
-                        // 2. PERSIAPAN DATA SURVEY
-                        // =================================================================================
-                        $responses = $responses;
-                        
-                        // Hitung Total Skor Likert per Responden
-                        $respondentScores = [];
-                        foreach ($responses as $resp) {
-                            $totalScore = 0;
-                            if(isset($resp->answers['likert'])) {
-                                foreach($resp->answers['likert'] as $lAnswer) {
-                                    $totalScore += (int)($lAnswer['answer'] ?? 0);
-                                }
-                            }
-                            $respondentScores[$resp->id] = $totalScore;
-                        }
-
-                        // Daftar Pertanyaan Demografi
-                        $demoQuestions = $survey->questionnaireTemplate->demographic_questions ?? [];
-                        if(!empty($survey->questionnaireTemplate->origin_country_question)) {
-                            array_unshift($demoQuestions, [
-                                'question_text' => 'Asal Negara',
-                                'type' => 'dropdown',
-                                'options' => [],
-                                'is_permanent' => true
-                            ]);
-                        }
-                    @endphp
+        // Daftar Pertanyaan Demografi
+        $demoQuestions = $survey->questionnaireTemplate->demographic_questions ?? [];
+        if(!empty($survey->questionnaireTemplate->origin_country_question)) {
+            array_unshift($demoQuestions, [
+                'question_text' => 'Asal Negara',
+                'type' => 'dropdown',
+                'options' => [],
+                'is_permanent' => true
+            ]);
+        }
+    @endphp
 
                     <div class="space-y-8">
 
@@ -647,31 +651,38 @@
                     {{-- Script Khusus Download CSV --}}
                     <script>
                     function downloadCSV(tableId, filename) {
-                        var csv = [];
-                        var rows = document.querySelectorAll('#' + tableId + ' tr');
+                    var csv = [];
+                    var rows = document.querySelectorAll('#' + tableId + ' tr');
+                    
+                    for (var i = 0; i < rows.length; i++) {
+                        var row = [], cols = rows[i].querySelectorAll("td, th");
                         
-                        for (var i = 0; i < rows.length; i++) {
-                            var row = [], cols = rows[i].querySelectorAll("td, th");
-                            
-                            for (var j = 0; j < cols.length; j++) {
-                                // Bersihkan text dari enter/spasi berlebih
-                                var data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/\s+/g, " ").trim();
-                                // Escape kutip dua
-                                data = data.replace(/"/g, '""');
-                                // Masukkan ke row CSV
-                                row.push('"' + data + '"');
-                            }
-                            csv.push(row.join(","));        
-                        }
+                        for (var j = 0; j < cols.length; j++) {
+                            let data = cols[j].innerText
+                                .replace(/(\r\n|\n|\r)/gm, "")
+                                .replace(/\s+/g, " ")
+                                .trim();
 
-                        var csvFile = new Blob([csv.join("\n")], {type: "text/csv"});
-                        var downloadLink = document.createElement("a");
-                        downloadLink.download = filename;
-                        downloadLink.href = window.URL.createObjectURL(csvFile);
-                        downloadLink.style.display = "none";
-                        document.body.appendChild(downloadLink);
-                        downloadLink.click();
+                            data = data.replace(/"/g, '""');
+
+                            // 🔥 FIX DESIMAL HILANG DI EXCEL
+                            if (data === '') {
+                                row.push(''); // kosong beneran
+                            } else {
+                                row.push('="' + data + '"'); // paksa text
+                            }
+
+                        }
+                        csv.push(row.join(","));
                     }
+
+                    var csvFile = new Blob([csv.join("\n")], { type: "text/csv;charset=utf-8;" });
+                    var link = document.createElement("a");
+                    link.href = URL.createObjectURL(csvFile);
+                    link.download = filename;
+                    link.click();
+                }
+
                     </script>
                 </div>
 
@@ -777,6 +788,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        switchTab('anova'); // Default tab
         if (window.ChartDataLabels) { Chart.register(ChartDataLabels); }
         const qs = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
         const palette = (n, seed=0) => {
